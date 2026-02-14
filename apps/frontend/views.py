@@ -158,7 +158,7 @@ class VerifyOTPView(View):
             ctx['error'] = 'This account does not belong to this gym.'
             return render(request, 'auth/otp_form.html', ctx)
 
-        login(request, user)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
         # Clean up session login keys
         request.session.pop('login_gym_id', None)
@@ -307,7 +307,7 @@ class SignupVerifyOTPView(View):
         user.save()
 
         # Auto-login
-        login(request, user)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
         # Clean up session
         request.session.pop('signup_data', None)
