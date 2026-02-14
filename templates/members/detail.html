@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block page_title %}{{ member.name }}{% endblock %}
+{% block page_subtitle %}Member since {{ member.join_date|date:"d M Y"|default:"N/A" }}{% endblock %}
+{% block title %}{{ member.name }}{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex items-center gap-2 text-sm mb-6">
+    <a href="{% url 'frontend:member-list' %}" class="text-slate-500 hover:text-slate-300">Members</a>
+    <svg class="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <span class="text-slate-300">{{ member.name }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+    <!-- Header Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold
+                        {% if member.gender == 'male' %}bg-sky-500/20 text-sky-400
+                        {% elif member.gender == 'female' %}bg-pink-500/20 text-pink-400
+                        {% else %}bg-slate-700 text-slate-400{% endif %}">
+                {{ member.name|make_list|first|upper }}
+            </div>
+            <div class="flex-1">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <h2 class="text-xl font-bold text-white">{{ member.name }}</h2>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-medium
+                                {% if member.status == 'active' %}bg-emerald-500/10 text-emerald-400
+                                {% elif member.status == 'expired' %}bg-amber-500/10 text-amber-400
+                                {% elif member.status == 'frozen' %}bg-sky-500/10 text-sky-400
+                                {% else %}bg-slate-700 text-slate-400{% endif %}">
+                        {{ member.get_status_display }}
+                    </span>
+                </div>
+                <p class="text-sm text-slate-400 mt-1">{{ member.phone }} {% if member.email %}· {{ member.email }}{% endif %}</p>
+            </div>
+            <a href="{% url 'frontend:member-edit' member.id %}"
+               class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+                Edit Member
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Fitness Profile -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Fitness Profile</h3>
+            <dl class="space-y-3">
+                <div class="flex justify-between"><dt class="text-sm text-slate-500">Goal</dt><dd class="text-sm text-white">{{ member.get_goal_display }}</dd></div>
+                <div class="flex justify-between"><dt class="text-sm text-slate-500">Experience</dt><dd class="text-sm text-white">{{ member.get_experience_level_display }}</dd></div>
+                <div class="flex justify-between"><dt class="text-sm text-slate-500">Diet</dt><dd class="text-sm text-white">{{ member.get_dietary_preference_display }}</dd></div>
+                <div class="flex justify-between"><dt class="text-sm text-slate-500">Height</dt><dd class="text-sm text-white">{{ member.height_cm|default:"—" }} cm</dd></div>
+                <div class="flex justify-between"><dt class="text-sm text-slate-500">Weight</dt><dd class="text-sm text-white">{{ member.weight_kg|default:"—" }} kg</dd></div>
+                {% if member.bmi %}<div class="flex justify-between"><dt class="text-sm text-slate-500">BMI</dt><dd class="text-sm text-white">{{ member.bmi }}</dd></div>{% endif %}
+                {% if member.medical_conditions %}<div class="flex justify-between"><dt class="text-sm text-slate-500">Medical</dt><dd class="text-sm text-amber-400">{{ member.medical_conditions }}</dd></div>{% endif %}
+            </dl>
+        </div>
+
+        <!-- Membership -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Membership</h3>
+            <dl class="space-y-3">
+                <div class="flex justify-between"><dt class="text-sm text-slate-500">Plan</dt><dd class="text-sm text-white">{{ member.membership_plan.name|default:"No Plan" }}</dd></div>
+                <div class="flex justify-between"><dt class="text-sm text-slate-500">Join Date</dt><dd class="text-sm text-white">{{ member.join_date|date:"d M Y"|default:"—" }}</dd></div>
+                <div class="flex justify-between"><dt class="text-sm text-slate-500">Expiry</dt><dd class="text-sm {% if member.status == 'expired' %}text-amber-400{% else %}text-white{% endif %}">{{ member.membership_expiry|date:"d M Y"|default:"—" }}</dd></div>
+                <div class="flex justify-between"><dt class="text-sm text-slate-500">Amount Paid</dt><dd class="text-sm text-emerald-400">₹{{ member.amount_paid|default:"0" }}</dd></div>
+                <div class="flex justify-between"><dt class="text-sm text-slate-500">Trainer</dt><dd class="text-sm text-white">{{ member.assigned_trainer.name|default:"None" }}</dd></div>
+            </dl>
+        </div>
+
+        <!-- Engagement -->
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Engagement</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-brand-400">{{ member.attendance_streak|default:"0" }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Day Streak</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold {% if member.churn_risk_score >= 70 %}text-rose-400{% elif member.churn_risk_score >= 40 %}text-amber-400{% else %}text-emerald-400{% endif %}">{{ member.churn_risk_score|default:"0" }}%</p>
+                    <p class="text-xs text-slate-500 mt-1">Churn Risk</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-white">{{ member.last_check_in|date:"d M"|default:"Never" }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Last Check-in</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-white">{{ member.gender|title|default:"—" }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Gender</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

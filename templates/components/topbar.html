@@ -1,0 +1,45 @@
+<!-- Top Navigation Bar -->
+<header class="bg-slate-900/80 backdrop-blur-sm border-b border-slate-800 px-4 md:px-6 py-3 flex items-center justify-between sticky top-0 z-30">
+    <!-- Left: Hamburger + Page title -->
+    <div class="flex items-center gap-3">
+        <!-- Mobile hamburger -->
+        <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-slate-400 hover:text-white transition-colors">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+
+        <div>
+            <h2 class="text-lg font-semibold text-white">{% block page_title %}Dashboard{% endblock %}</h2>
+            <p class="text-xs text-slate-500 hidden sm:block">{% block page_subtitle %}Welcome back, {{ request.user.name|default:"User" }}{% endblock %}</p>
+        </div>
+    </div>
+
+    <!-- Right: Actions -->
+    <div class="flex items-center gap-3">
+        <!-- HTMX loading indicator -->
+        <div class="htmx-indicator">
+            <svg class="w-5 h-5 text-brand-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+        </div>
+
+        <!-- Quick Add Member -->
+        <a href="{% url 'frontend:member-add' %}"
+           class="hidden sm:flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm px-4 py-2 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Member
+        </a>
+
+        <!-- Mobile Add button -->
+        <a href="{% url 'frontend:member-add' %}"
+           class="sm:hidden w-9 h-9 rounded-lg bg-brand-600 hover:bg-brand-700 flex items-center justify-center text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+        </a>
+    </div>
+</header>

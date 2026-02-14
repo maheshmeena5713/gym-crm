@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+
+{% block auth_content %}
+<div class="w-full max-w-md px-6">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+        <a href="/" class="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mb-4">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Back to Home
+        </a>
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mb-4 shadow-lg shadow-brand-500/25">
+            <svg class="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h4l3-4h4l3 4h4v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-white">Welcome to GymAI</h1>
+        <p class="text-slate-400 mt-1 text-sm">AI-powered gym management</p>
+    </div>
+
+    <!-- Login Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div id="auth-form">
+            {% include "auth/gym_code_form.html" %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="text-center text-slate-600 text-xs mt-6">
+        Don't have an account? <a href="/signup/" class="text-indigo-400 hover:text-indigo-300">Start free trial</a>
+    </p>
+</div>
+
+<script>
+    // localStorage gym code caching → auto-skip to phone form
+    document.addEventListener('DOMContentLoaded', function() {
+        // First try reading from the cookie set during login
+        try {
+            const cookieData = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('gym_cache_data='));
+            if (cookieData) {
+                const gymInfo = JSON.parse(decodeURIComponent(cookieData.split('=').slice(1).join('=')));
+                if (gymInfo && gymInfo.gym_code) {
+                    localStorage.setItem('gymai_gym_cache', JSON.stringify(gymInfo));
+                    // Clear the cookie after reading
+                    document.cookie = 'gym_cache_data=; Max-Age=0; path=/';
+                }
+            }
+        } catch(e) {}
+
+        // Check localStorage for cached gym code
+        try {
+            const cached = JSON.parse(localStorage.getItem('gymai_gym_cache'));
+            if (cached && cached.gym_code) {
+                // Auto-submit the gym code to skip to phone form
+                const gymCodeInput = document.getElementById('gym_code');
+                if (gymCodeInput) {
+                    gymCodeInput.value = cached.gym_code;
+                    // Trigger HTMX form submit after a short delay so HTMX is initialized
+                    setTimeout(function() {
+                        const form = gymCodeInput.closest('form');
+                        if (form && window.htmx) {
+                            htmx.trigger(form, 'submit');
+                        }
+                    }, 200);
+                }
+            }
+        } catch(e) {}
+    });
+</script>
+{% endblock %}

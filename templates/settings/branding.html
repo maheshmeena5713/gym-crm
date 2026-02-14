@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}Branding Settings{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-white">Gym Branding</h1>
+        <p class="text-slate-400 mt-1">Customize your gym's logo, colors, and fonts</p>
+        <div class="mt-2 flex items-center gap-2 text-sm">
+            <span class="px-2 py-1 bg-slate-800 rounded-lg text-slate-400 font-mono">{{ gym.gym_code }}</span>
+            <span class="text-slate-600">•</span>
+            <span class="text-slate-500">{{ gym.name }}</span>
+        </div>
+    </div>
+
+    <form method="post" action="{% url 'frontend:gym-settings' %}" id="branding-form" class="space-y-8">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Settings Column -->
+            <div class="lg:col-span-2 space-y-8">
+
+                <!-- Logo Upload -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6" x-data="logoUploader()">
+                    <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Logo
+                    </h2>
+                    <div class="flex items-start gap-6">
+                        <!-- Current / Preview -->
+                        <div class="flex-shrink-0">
+                            <div class="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-700 flex items-center justify-center overflow-hidden bg-slate-800">
+                                <template x-if="previewUrl">
+                                    <img :src="previewUrl" class="w-full h-full object-cover rounded-2xl">
+                                </template>
+                                <template x-if="!previewUrl">
+                                    {% if gym.logo_data_uri %}
+                                    <img src="{{ gym.logo_data_uri }}" class="w-full h-full object-cover rounded-2xl">
+                                    {% else %}
+                                    <svg class="w-10 h-10 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                    </svg>
+                                    {% endif %}
+                                </template>
+                            </div>
+                        </div>
+                        <!-- Upload controls -->
+                        <div class="flex-1">
+                            <input type="file" id="logo-file" accept="image/*" class="hidden" @change="handleFile($event)">
+                            <input type="hidden" name="logo_base64" x-model="base64Data">
+                            <button type="button" @click="$el.parentElement.querySelector('#logo-file').click()"
+                                    class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors">
+                                Upload Logo
+                            </button>
+                            <p class="text-xs text-slate-500 mt-2">PNG, JPG, or SVG. Max 200 KB. Auto-resized to 256×256px.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Brand Color -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6" x-data="{ selectedColor: '{{ gym.brand_color }}' }">
+                    <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                        </svg>
+                        Brand Color
+                    </h2>
+                    <div class="space-y-4">
+                        <!-- Color picker -->
+                        <div class="flex items-center gap-4">
+                            <input type="color" name="brand_color" :value="selectedColor" x-model="selectedColor"
+                                   class="w-12 h-12 rounded-xl cursor-pointer border-0 bg-transparent">
+                            <input type="text" :value="selectedColor" x-model="selectedColor"
+                                   class="w-28 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono text-sm uppercase"
+                                   maxlength="7" pattern="#[0-9a-fA-F]{6}">
+                        </div>
+                        <!-- Preset swatches -->
+                        <div class="flex flex-wrap gap-3">
+                            {% for color_hex, color_name in preset_colors %}
+                            <button type="button"
+                                    @click="selectedColor = '{{ color_hex }}'; $refs.colorInput && ($refs.colorInput.value = '{{ color_hex }}')"
+                                    class="group flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+                                    :class="selectedColor === '{{ color_hex }}' ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''">
+                                <span class="w-5 h-5 rounded-full" style="background: {{ color_hex }}"></span>
+                                <span class="text-xs text-slate-400 group-hover:text-white">{{ color_name }}</span>
+                            </button>
+                            {% empty %}
+                            <!-- Default presets inline -->
+                            {% for preset in "Indigo:#6366f1,Rose:#f43f5e,Emerald:#10b981,Amber:#f59e0b,Cyan:#06b6d4,Violet:#8b5cf6"|make_list %}
+                            {% endfor %}
+                            <button type="button" @click="selectedColor = '#6366f1'"
+                                    class="group flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+                                    :class="selectedColor === '#6366f1' ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''">
+                                <span class="w-5 h-5 rounded-full bg-indigo-500"></span>
+                                <span class="text-xs text-slate-400 group-hover:text-white">Indigo</span>
+                            </button>
+                            <button type="button" @click="selectedColor = '#ef4444'"
+                                    class="group flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+                                    :class="selectedColor === '#ef4444' ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''">
+                                <span class="w-5 h-5 rounded-full bg-red-500"></span>
+                                <span class="text-xs text-slate-400 group-hover:text-white">Red</span>
+                            </button>
+                            <button type="button" @click="selectedColor = '#10b981'"
+                                    class="group flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+                                    :class="selectedColor === '#10b981' ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''">
+                                <span class="w-5 h-5 rounded-full bg-emerald-500"></span>
+                                <span class="text-xs text-slate-400 group-hover:text-white">Emerald</span>
+                            </button>
+                            <button type="button" @click="selectedColor = '#f59e0b'"
+                                    class="group flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+                                    :class="selectedColor === '#f59e0b' ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''">
+                                <span class="w-5 h-5 rounded-full bg-amber-500"></span>
+                                <span class="text-xs text-slate-400 group-hover:text-white">Amber</span>
+                            </button>
+                            <button type="button" @click="selectedColor = '#06b6d4'"
+                                    class="group flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+                                    :class="selectedColor === '#06b6d4' ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''">
+                                <span class="w-5 h-5 rounded-full bg-cyan-500"></span>
+                                <span class="text-xs text-slate-400 group-hover:text-white">Cyan</span>
+                            </button>
+                            <button type="button" @click="selectedColor = '#8b5cf6'"
+                                    class="group flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+                                    :class="selectedColor === '#8b5cf6' ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900' : ''">
+                                <span class="w-5 h-5 rounded-full bg-violet-500"></span>
+                                <span class="text-xs text-slate-400 group-hover:text-white">Violet</span>
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Font Family -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6" x-data="{ selectedFont: '{{ gym.font_family }}' }">
+                    <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"/>
+                        </svg>
+                        Font Family
+                    </h2>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {% for font_value, font_label in font_choices %}
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="font_family" value="{{ font_value }}" x-model="selectedFont" class="hidden peer">
+                            <div class="p-4 bg-slate-800 border border-slate-700 rounded-xl text-center
+                                        peer-checked:border-brand-500 peer-checked:bg-brand-500/10 transition-all hover:bg-slate-700">
+                                <link href="https://fonts.googleapis.com/css2?family={{ font_value }}:wght@600&display=swap" rel="stylesheet">
+                                <p class="text-white text-lg font-semibold" style="font-family: '{{ font_value }}', sans-serif">Aa</p>
+                                <p class="text-xs text-slate-400 mt-1">{{ font_label }}</p>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Column -->
+            <div class="lg:col-span-1">
+                <div class="sticky top-6 space-y-6">
+                    <!-- Live Preview -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Live Preview</h3>
+                        <div class="bg-slate-950 rounded-xl p-4 border border-slate-800">
+                            <!-- Mini sidebar preview -->
+                            <div class="flex items-center gap-2 mb-3">
+                                {% if gym.logo_data_uri %}
+                                <img src="{{ gym.logo_data_uri }}" class="w-8 h-8 rounded-lg object-cover">
+                                {% else %}
+                                <div class="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
+                                    <span class="text-white text-xs font-bold">G</span>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <p class="text-sm font-semibold text-white truncate" style="max-width: 120px">{{ gym.name }}</p>
+                                    <p class="text-[10px] text-slate-500 font-mono">{{ gym.gym_code }}</p>
+                                </div>
+                            </div>
+                            <!-- Mini nav items -->
+                            <div class="space-y-1">
+                                <div class="px-2 py-1.5 rounded-lg bg-brand-500/10 text-brand-400 text-xs font-medium">Dashboard</div>
+                                <div class="px-2 py-1.5 rounded-lg text-slate-400 text-xs">Members</div>
+                                <div class="px-2 py-1.5 rounded-lg text-slate-400 text-xs">Settings</div>
+                            </div>
+                            <!-- Mini button preview -->
+                            <div class="mt-3">
+                                <div class="px-3 py-1.5 bg-brand-600 text-white text-xs font-medium rounded-lg text-center">
+                                    Save Changes
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Save Button -->
+                    <button type="submit"
+                            class="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold
+                                   rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-brand-600/25">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Save Branding
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Logo Upload JavaScript -->
+<script>
+function logoUploader() {
+    return {
+        previewUrl: null,
+        base64Data: '',
+        handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate size (200KB)
+            if (file.size > 200 * 1024) {
+                alert('Logo must be under 200 KB');
+                return;
+            }
+
+            // Validate type
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Resize to 256x256
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 256;
+                    canvas.height = 256;
+                    const ctx = canvas.getContext('2d');
+
+                    // Cover-fit (crop to square)
+                    const size = Math.min(img.width, img.height);
+                    const ox = (img.width - size) / 2;
+                    const oy = (img.height - size) / 2;
+                    ctx.drawImage(img, ox, oy, size, size, 0, 0, 256, 256);
+
+                    const dataUrl = canvas.toDataURL('image/png');
+                    this.previewUrl = dataUrl;
+                    this.base64Data = dataUrl;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+}
+</script>
+{% endblock %}
