@@ -59,6 +59,16 @@
             Dashboard
         </a>
 
+        {% url 'frontend:business-health' as health_url %}
+        <a href="{{ health_url }}"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                  {% if request.path == health_url %}bg-brand-500/10 text-brand-400{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            Business Health
+        </a>
+
         {% url 'frontend:member-list' as members_url %}
         <a href="{{ members_url }}"
            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900" id="dash-title">Enterprise Dashboard</h1>
+            <p class="text-gray-600 mt-1" id="dash-subtitle">Loading overview...</p>
+        </div>
+        <div class="flex space-x-4">
+            <span class="px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                {{ user.get_role_display }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="stats-grid">
+        <!-- Stats will be injected here via JS -->
+        <div class="bg-white p-6 rounded-lg shadow animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+            <div class="h-8 bg-gray-200 rounded w-3/4"></div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Locations Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h3 class="font-semibold text-gray-800">Locations Overview</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm" id="locations-table">
+                    <thead class="bg-gray-50 text-gray-600 border-b">
+                        <tr>
+                            <th class="px-6 py-3 font-medium">Name</th>
+                            <th class="px-6 py-3 font-medium">City</th>
+                            <th class="px-6 py-3 font-medium text-right">Members</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100" id="locations-body">
+                        <!-- Rows injected via JS -->
+                        <tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Royalty Ledger (Only for Org/Brand Admins) -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h3 class="font-semibold text-gray-800">Royalty Ledger</h3>
+                <button onclick="fetchRoyalties()" class="text-xs text-blue-600 hover:text-blue-800">Refresh</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm" id="royalty-table">
+                    <thead class="bg-gray-50 text-gray-600 border-b">
+                        <tr>
+                            <th class="px-6 py-3 font-medium">Month</th>
+                            <th class="px-6 py-3 font-medium text-right">Revenue</th>
+                            <th class="px-6 py-3 font-medium text-right">Royalty Due</th>
+                            <th class="px-6 py-3 font-medium text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100" id="royalty-body">
+                        <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const role = "{{ user.role }}";
+        const isOrgAdmin = role === 'org_admin';
+        const isHoldingAdmin = role === 'holding_admin';
+
+        // URL logic based on Role
+        let dashboardUrl = '';
+        if (isOrgAdmin) {
+            dashboardUrl = '/api/v1/enterprises/dashboard/organization/';
+        } else if (isHoldingAdmin) {
+            dashboardUrl = '/api/v1/enterprises/dashboard/holding/';
+        }
+
+        if (dashboardUrl) {
+            fetchStats(dashboardUrl);
+        }
+
+        if (isOrgAdmin) {
+            fetchRoyalties();
+        } else {
+            document.getElementById('royalty-table').parentElement.parentElement.style.display = 'none';
+        }
+    });
+
+    function fetchStats(url) {
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                // Update Title
+                document.getElementById('dash-title').innerText = data.organization_name || data.holding_name || 'Enterprise Dashboard';
+                document.getElementById('dash-subtitle').innerText = data.brand_name ? `${data.brand_name} Franchise` : 'Group Overview';
+
+                // Render Stats Cards
+                const statsContainer = document.getElementById('stats-grid');
+                statsContainer.innerHTML = '';
+                
+                // Helper to create card
+                const createCard = (label, value, color='blue') => `
+                    <div class="bg-white p-6 rounded-lg shadow border-l-4 border-${color}-500">
+                        <p class="text-sm font-medium text-gray-500 uppercase">${label}</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1">${value}</p>
+                    </div>
+                `;
+
+                const s = data.stats;
+                if (s.total_gyms !== undefined) statsContainer.innerHTML += createCard('Total Gyms', s.total_gyms, 'blue');
+                if (s.total_locations !== undefined) statsContainer.innerHTML += createCard('Locations', s.total_locations, 'blue');
+                if (s.total_members !== undefined) statsContainer.innerHTML += createCard('Total Members', s.total_members, 'green');
+                if (s.active_members !== undefined) statsContainer.innerHTML += createCard('Active Members', s.active_members, 'indigo');
+                if (s.total_revenue !== undefined) statsContainer.innerHTML += createCard('Total Revenue', '₹' + s.total_revenue, 'yellow');
+
+                // Render Locations Table
+                const tbody = document.getElementById('locations-body');
+                tbody.innerHTML = '';
+                const locs = data.locations || (data.brands ? [] : []); // Holding returns brands, Org returns locations
+
+                if (locs.length > 0) {
+                    locs.forEach(l => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td class="px-6 py-4 font-medium text-gray-900">${l.name}</td>
+                                <td class="px-6 py-4 text-gray-500">${l.city || '-'}</td>
+                                <td class="px-6 py-4 text-right font-semibold">${l.members}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">No locations found.</td></tr>';
+                }
+            })
+            .catch(err => console.error('Error fetching stats:', err));
+    }
+
+    function fetchRoyalties() {
+        fetch('/api/v1/enterprises/royalties/')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('royalty-body');
+                tbody.innerHTML = '';
+                if (data.history && data.history.length > 0) {
+                    data.history.forEach(row => {
+                         const statusBadge = row.is_paid 
+                            ? '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Paid</span>'
+                            : '<span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Due</span>';
+                         
+                        tbody.innerHTML += `
+                            <tr>
+                                <td class="px-6 py-4 font-medium text-gray-900">${row.month}</td>
+                                <td class="px-6 py-4 text-right text-gray-500">₹${row.gross_revenue}</td>
+                                <td class="px-6 py-4 text-right font-bold text-gray-800">₹${row.royalty_due}</td>
+                                <td class="px-6 py-4 text-center">${statusBadge}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No royalty history available.</td></tr>';
+                }
+            })
+            .catch(err => console.error('Error fetching royalties:', err));
+    }
+</script>
+{% endblock %}

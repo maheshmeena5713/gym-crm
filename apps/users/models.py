@@ -74,9 +74,10 @@ class GymUser(AbstractBaseUser, PermissionsMixin):
     # ── Auth Fields ───────────────────────────────────────────
     phone = models.CharField(
         max_length=20,
-        unique=True,
+        unique=False,  # Changed from True to False for multi-gym support
         verbose_name="Phone Number",
         help_text="Primary phone number for OTP login",
+        db_index=True,
     )
     email = models.EmailField(
         null=True,
@@ -88,10 +89,10 @@ class GymUser(AbstractBaseUser, PermissionsMixin):
         max_length=30,
         null=True,
         blank=True,
-        unique=True,
+        unique=False,  # Changed from True to False for multi-gym support
         db_index=True,
         verbose_name="Username",
-        help_text="Unique login username (lowercase, 4-30 chars, alphanumeric + underscores)",
+        help_text="Login username (lowercase, 4-30 chars, alphanumeric + underscores)",
     )
     name = models.CharField(
         max_length=255,
@@ -104,15 +105,45 @@ class GymUser(AbstractBaseUser, PermissionsMixin):
         verbose_name="Avatar",
     )
 
+    # ── Enterprise Association ────────────────────────────────
+    holding_company = models.ForeignKey(
+        'enterprises.HoldingCompany',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='staff',
+        verbose_name="Holding Company"
+    )
+    brand = models.ForeignKey(
+        'enterprises.Brand',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='staff',
+        verbose_name="Brand"
+    )
+    organization = models.ForeignKey(
+        'enterprises.Organization',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='staff',
+        verbose_name="Organization"
+    )
+
     # ── Role-Based Access ─────────────────────────────────────
     class Role(models.TextChoices):
-        OWNER = 'owner', 'Gym Owner'
-        MANAGER = 'manager', 'Manager'
+        HOLDING_ADMIN = 'holding_admin', 'Holding Admin'
+        BRAND_ADMIN = 'brand_admin', 'Brand Admin'
+        ORG_ADMIN = 'org_admin', 'Organization Admin (Super Owner)'
+        REGION_MANAGER = 'region_manager', 'Regional Manager'
+        OWNER = 'owner', 'Gym Owner (Legacy)'
+        MANAGER = 'manager', 'Branch Manager'
         TRAINER = 'trainer', 'Trainer'
         RECEPTIONIST = 'receptionist', 'Front Desk'
 
     role = models.CharField(
-        max_length=20,
+        max_length=50,  # Increased length for new roles
         choices=Role.choices,
         default=Role.TRAINER,
         verbose_name="Role",
@@ -187,6 +218,10 @@ class GymUser(AbstractBaseUser, PermissionsMixin):
             models.Index(fields=['gym', 'role'], name='idx_user_gym_role'),
             models.Index(fields=['phone'], name='idx_user_phone'),
             models.Index(fields=['username'], name='idx_user_username'),
+        ]
+        unique_together = [
+            ['gym', 'phone'],
+            ['gym', 'username'],
         ]
 
     def __str__(self):

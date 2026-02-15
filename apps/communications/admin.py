@@ -35,3 +35,12 @@ class WhatsAppMessageAdmin(ImportExportModelAdmin):
     readonly_fields = ('id', 'created_at', 'updated_at')
     list_per_page = 50
     date_hierarchy = 'created_at'
+
+
+from apps.communications.models import Quote
+
+@admin.register(Quote)
+class QuoteAdmin(admin.ModelAdmin):
+    list_display = ('content', 'author', 'is_active', 'last_sent')
+    list_filter = ('is_active',)
+    search_fields = ('content', 'author')

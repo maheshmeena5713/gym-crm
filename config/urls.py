@@ -23,6 +23,7 @@ api_v1_urlpatterns = [
     path('auth/', include('apps.users.urls')),
     path('members/', include('apps.members.urls')),
     path('membership-plans/', include('apps.members.urls_plans')),
+    path('enterprises/', include('apps.enterprises.urls')),
 ]
 
 urlpatterns = [

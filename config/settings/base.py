@@ -16,6 +16,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+if 'testserver' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('testserver')
 
 # Application definition
 DJANGO_APPS = [
@@ -40,6 +42,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     'apps.core.apps.CoreConfig',
     'apps.gyms.apps.GymsConfig',
+    'apps.enterprises.apps.EnterprisesConfig',
     'apps.users.apps.UsersConfig',
     'apps.members.apps.MembersConfig',
     'apps.leads.apps.LeadsConfig',
@@ -182,6 +185,15 @@ IMPORT_EXPORT_USE_TRANSACTIONS = True
 # OpenAI
 OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
 OPENAI_DEFAULT_MODEL = 'gpt-4o-mini'
+
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
+GEMINI_DEFAULT_MODEL = 'gemini-2.0-flash'
+
+# ── WhatsApp Automation (Meta Business Cloud API) ──────────────────────
+META_WHATSAPP_API_URL = config('META_WHATSAPP_API_URL', default='https://graph.facebook.com/v17.0')
+META_WHATSAPP_ACCESS_TOKEN = config('META_WHATSAPP_ACCESS_TOKEN', default='')
+META_WHATSAPP_PHONE_NUMBER_ID = config('META_WHATSAPP_PHONE_NUMBER_ID', default='')
+WHATSAPP_SIMULATION_MODE = config('WHATSAPP_SIMULATION_MODE', default=True, cast=bool)
 
 # Razorpay
 RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')

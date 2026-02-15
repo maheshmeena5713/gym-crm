@@ -126,17 +126,36 @@ class OTPService:
         otp_session.is_verified = True
         otp_session.save(update_fields=['is_verified'])
 
-        # Get or create user
-        user, created = GymUser.objects.get_or_create(
-            phone=phone,
-            defaults={
-                'name': f'User {phone[-4:]}',
-                'role': GymUser.Role.OWNER,
-            },
-        )
+        # Get users associated with this phone
+        users = GymUser.objects.filter(phone=phone)
 
+        if not users.exists():
+            # Create new user for first-time login (default to Owner role, no gym yet)
+            # This user is "platform level" until assigned a gym or creates one.
+            user = GymUser.objects.create(
+                phone=phone,
+                name=f'User {phone[-4:]}',
+                role=GymUser.Role.OWNER,
+                gym=None
+            )
+            created = True
+            users = [user] # Treat as list for consistency
+        else:
+            created = False
+
+        # If multiple users found, return list for selection
+        if len(users) > 1:
+            return True, {
+                'is_multi_account': True,
+                'accounts': users,  # View will serialize this
+                'phone': phone
+            }
+
+        # Single user found
+        user = users.first()
+        
         # Update last login
         user.last_login = timezone.now()
         user.save(update_fields=['last_login'])
 
-        return True, {'user': user, 'is_new_user': created}
+        return True, {'user': user, 'is_new_user': created, 'is_multi_account': False}

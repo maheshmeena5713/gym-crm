@@ -136,3 +136,21 @@ class WhatsAppMessage(BaseModel):
 
     def __str__(self):
         return f"{self.get_message_type_display()} → {self.recipient_phone} ({self.get_status_display()})"
+
+
+class Quote(BaseModel):
+    """
+    Daily motivational quotes for members.
+    """
+    content = models.TextField(verbose_name="Quote Content")
+    author = models.CharField(max_length=100, blank=True, null=True, verbose_name="Author")
+    is_active = models.BooleanField(default=True, verbose_name="Active")
+    last_sent = models.DateField(null=True, blank=True, verbose_name="Last Sent Date")
+
+    class Meta:
+        db_table = 'communications_quote'
+        verbose_name = 'Daily Quote'
+        verbose_name_plural = 'Daily Quotes'
+
+    def __str__(self):
+        return f"{self.content[:50]}..."

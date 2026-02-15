@@ -28,10 +28,14 @@ urlpatterns = [
 
     # ── Dashboard ─────────────────────────────────────────
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
+    path('business-health/', views.BusinessHealthView.as_view(), name='business-health'),
 
     # ── Members ───────────────────────────────────────────
     path('members/', views.MemberListView.as_view(), name='member-list'),
     path('members/add/', views.MemberCreateView.as_view(), name='member-add'),
+    path('members/import/', views.BulkImportView.as_view(), name='member-import'),
+    path('members/import/sample/', views.SampleFileView.as_view(), name='member-import-sample'),
+    path('members/scan-card/', views.CardScanView.as_view(), name='member-scan-card'),
     path('members/<uuid:pk>/', views.MemberDetailView.as_view(), name='member-detail'),
     path('members/<uuid:pk>/edit/', views.MemberEditView.as_view(), name='member-edit'),
 

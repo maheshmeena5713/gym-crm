@@ -13,6 +13,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
@@ -20,6 +21,7 @@ from apps.gyms.models import Gym
 from apps.members.models import Member, MembershipPlan
 from apps.users.models import GymUser
 from apps.users.services import OTPService
+from apps.members.services import BulkImportService, AIScanService
 from apps.frontend.forms import MemberForm
 
 logger = logging.getLogger('apps.frontend')
@@ -421,36 +423,190 @@ class DashboardView(LoginRequiredMixin, View):
 
     def get(self, request):
         user = request.user
+        
+        # Enterprise Redirect
+        if user.role in [GymUser.Role.HOLDING_ADMIN, GymUser.Role.BRAND_ADMIN, GymUser.Role.ORG_ADMIN]:
+            return render(request, 'enterprises/dashboard.html')
+
         gym = user.gym
 
         # Build stats
         if gym:
             members_qs = Member.objects.filter(gym=gym, is_deleted=False)
+            
+            # 1. Total & Status Counts
+            total_members = members_qs.count()
+            active_count = members_qs.filter(status='active').count()
+            expired_count = members_qs.filter(status='expired').count()
+            frozen_count = members_qs.filter(status='frozen').count()
+            
+            # 2. Revenue MTD
+            from django.db.models import Sum
+            today = timezone.now().date()
+            current_month_start = today.replace(day=1)
+            revenue_mtd = members_qs.filter(
+                join_date__gte=current_month_start
+            ).aggregate(total=Sum('amount_paid'))['total'] or 0
+            
+            # Last Month Revenue (Approximation for demo)
+            last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
+            last_month_end = current_month_start - timedelta(days=1)
+            revenue_last_month = members_qs.filter(
+                join_date__gte=last_month_start,
+                join_date__lte=last_month_end
+            ).aggregate(total=Sum('amount_paid'))['total'] or 0
+            
+            revenue_growth = 0
+            if revenue_last_month > 0:
+                revenue_growth = int(((revenue_mtd - revenue_last_month) / revenue_last_month) * 100)
+            else:
+                 revenue_growth = 100 if revenue_mtd > 0 else 0
+
+            # 3. Pending Renewals
+            week_later = today + timedelta(days=7)
+            expiring_soon_qs = members_qs.filter(
+                status='active',
+                membership_expiry__gte=today,
+                membership_expiry__lte=week_later,
+            )
+            expiring_count = expiring_soon_qs.count()
+            # Calculate potential revenue from these renewals
+            pending_revenue = 0
+            for m in expiring_soon_qs:
+                if m.membership_plan:
+                    pending_revenue += m.membership_plan.price
+
+            # 4. Churn Risk & AI Insights
+            high_risk_qs = members_qs.filter(churn_risk_score__gte=70)
+            high_risk_count = high_risk_qs.count()
+            
+            # Detailed breakdown for "Why"
+            inactive_10_days = members_qs.filter(
+                last_check_in__lt=timezone.now() - timedelta(days=10),
+                status='active'
+            ).count()
+            
+            # AI Insights List (Conversational)
+            ai_insights = []
+            if high_risk_count > 0:
+                ai_insights.append(f"{high_risk_count} members likely to churn based on attendance drops.")
+            if inactive_10_days > 0:
+                 ai_insights.append(f"{inactive_10_days} high-value members inactive for 10+ days.")
+            if expiring_count > 0:
+                 ai_insights.append(f"{expiring_count} renewals due in the next 7 days.")
+            if not ai_insights:
+                ai_insights.append("AI is analyzing member patterns. No critical alerts today.")
+
             stats = {
-                'total_members': members_qs.count(),
-                'active': members_qs.filter(status='active').count(),
-                'expired': members_qs.filter(status='expired').count(),
-                'frozen': members_qs.filter(status='frozen').count(),
-                'high_churn_risk': members_qs.filter(churn_risk_score__gte=70).count(),
+                'total_members': total_members,
+                'active': active_count,
+                'expired': expired_count,
+                'frozen': frozen_count,
+                'high_churn_risk': high_risk_count,
+                'revenue_mtd': revenue_mtd,
+                'revenue_growth': revenue_growth,
+                'pending_renewals_amount': pending_revenue,
+                'pending_renewals_count': expiring_count,
+                'risk_inactive_count': inactive_10_days,
+                'risk_renewal_count': expiring_count, # overlapping logic but okay for UI
             }
             recent_members = members_qs.order_by('-created_at')[:5]
-            # Members expiring in the next 7 days
-            week_later = timezone.now().date() + timedelta(days=7)
-            expiring_soon = members_qs.filter(
-                status='active',
-                membership_expiry__lte=week_later,
-                membership_expiry__gte=timezone.now().date(),
-            ).order_by('membership_expiry')[:10]
+            expiring_soon = expiring_soon_qs.order_by('membership_expiry')[:10]
         else:
             stats = {}
             recent_members = []
             expiring_soon = []
+            ai_insights = []
 
         return render(request, 'dashboard/index.html', {
             'stats': stats,
             'recent_members': recent_members,
             'expiring_soon': expiring_soon,
+            'ai_insights': ai_insights,
+            'today': timezone.now().date(),
         })
+
+
+class BusinessHealthView(LoginRequiredMixin, View):
+    login_url = '/login/'
+
+    def get(self, request):
+        gym = request.user.gym
+        if not gym:
+            return redirect('frontend:dashboard')
+
+        members_qs = Member.objects.filter(gym=gym, is_deleted=False)
+        total_members = members_qs.count() or 1
+
+        # 1. Revenue
+        from django.db.models import Sum
+        today = timezone.now().date()
+        current_month_start = today.replace(day=1)
+        revenue_mtd = members_qs.filter(
+            join_date__gte=current_month_start
+        ).aggregate(total=Sum('amount_paid'))['total'] or 0
+        
+        last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
+        last_month_end = current_month_start - timedelta(days=1)
+        revenue_last = members_qs.filter(
+            join_date__gte=last_month_start,
+            join_date__lte=last_month_end
+        ).aggregate(total=Sum('amount_paid'))['total'] or 0
+
+        growth = 0
+        if revenue_last > 0:
+            growth = int(((revenue_mtd - revenue_last) / revenue_last) * 100)
+        else:
+            growth = 100 if revenue_mtd > 0 else 0
+
+        # 2. Retention
+        active_count = members_qs.filter(status='active').count()
+        active_pct = int((active_count / total_members) * 100)
+        
+        expired_count = members_qs.filter(status='expired').count()
+        expired_pct = int((expired_count / total_members) * 100)
+        
+        at_risk_count = members_qs.filter(churn_risk_score__gte=70).count()
+        at_risk_pct = int((at_risk_count / total_members) * 100)
+
+        # 3. Action Needed Lists
+        inactive_7_days = members_qs.filter(
+            last_check_in__lt=timezone.now() - timedelta(days=7),
+            status='active'
+        )[:5]
+        
+        expiring_3_days = members_qs.filter(
+             status='active',
+             membership_expiry__lte=today+timedelta(days=3),
+             membership_expiry__gte=today
+        )[:5]
+        
+        # Payment pending = Expired in last 30 days
+        payment_pending = members_qs.filter(
+            status='expired',
+            membership_expiry__gte=today-timedelta(days=30),
+            membership_expiry__lte=today
+        )[:5]
+
+        context = {
+            'revenue': {
+                'mtd': revenue_mtd,
+                'last': revenue_last,
+                'growth': growth
+            },
+            'retention': {
+                'active_pct': active_pct,
+                'expired_pct': expired_pct,
+                'at_risk_pct': at_risk_pct,
+                'total_members': total_members if members_qs.count() > 0 else 0
+            },
+            'actions': {
+                'inactive': inactive_7_days,
+                'expiring': expiring_3_days,
+                'pending': payment_pending
+            }
+        }
+        return render(request, 'dashboard/business_health.html', context)
 
 
 # ── Member Views ──────────────────────────────────────────────
@@ -520,6 +676,8 @@ class MemberCreateView(LoginRequiredMixin, View):
             if not member.membership_start:
                 member.membership_start = timezone.now().date()
             member.save()
+            from django.contrib import messages
+            messages.success(request, f"Member {member.name} added successfully! WhatsApp welcome message sent.")
             return redirect('frontend:member-detail', pk=member.pk)
         return render(request, 'members/form.html', self._context(form))
 
@@ -581,6 +739,81 @@ class MemberEditView(LoginRequiredMixin, View):
             ) if gym else [],
             'today': timezone.now().date().isoformat(),
         }
+
+
+
+class BulkImportView(LoginRequiredMixin, View):
+    """Handle bulk import of members via CSV/Excel."""
+    def post(self, request):
+        gym = request.user.gym
+        if not gym:
+             return JsonResponse({'success': False, 'message': 'No gym associated.'}, status=400)
+
+        file = request.FILES.get('file')
+        if not file:
+            return JsonResponse({'success': False, 'message': 'No file uploaded.'}, status=400)
+
+        success_count, errors = BulkImportService.process_file(file, gym)
+
+        if success_count > 0:
+            if errors:
+                msg = f"Imported {success_count} members. {len(errors)} errors: " + "; ".join(errors[:3])
+            else:
+                msg = f"Successfully imported {success_count} members."
+            return JsonResponse({'success': True, 'message': msg, 'errors': errors})
+        else:
+            return JsonResponse({'success': False, 'message': 'Import failed.', 'errors': errors}, status=400)
+
+
+class SampleFileView(LoginRequiredMixin, View):
+    """Download a sample CSV/Excel file for bulk import."""
+    def get(self, request):
+        format = request.GET.get('format', 'csv')
+        
+        # Create sample data
+        data = [
+            {'Name': 'John Doe', 'Phone': '9876543210', 'Email': 'john@example.com', 'Plan': 'Monthly'},
+            {'Name': 'Jane Smith', 'Phone': '9123456789', 'Email': 'jane@example.com', 'Plan': 'Yearly'},
+        ]
+        
+        import pandas as pd
+        df = pd.DataFrame(data)
+        
+        from io import BytesIO
+        buffer = BytesIO()
+
+        if format == 'xlsx':
+            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False)
+            content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            filename = 'members_sample.xlsx'
+        else:
+            # CSV
+            df.to_csv(buffer, index=False)
+            content_type = 'text/csv'
+            filename = 'members_sample.csv'
+
+        buffer.seek(0)
+        response = HttpResponse(buffer.getvalue(), content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+
+class CardScanView(LoginRequiredMixin, View):
+    """AI Scan of membership card."""
+    def post(self, request):
+        image = request.FILES.get('image')
+        if not image:
+            logger.error("CardScanView: No image in request.FILES")
+            return JsonResponse({'success': False, 'message': 'No image uploaded.'}, status=400)
+
+        logger.info(f"CardScanView: Processing image {image.name}")
+        success, result = AIScanService.scan_card(image)
+        if success:
+            return JsonResponse({'success': True, 'data': result})
+        else:
+            logger.error(f"CardScanView: Scan failed - {result}")
+            return JsonResponse({'success': False, 'message': result}, status=400)
 
 
 # ── Settings Views ────────────────────────────────────────────

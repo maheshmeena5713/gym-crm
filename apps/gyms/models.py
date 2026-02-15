@@ -30,6 +30,16 @@ class Gym(BaseModel):
     """
 
     # ── Tenant Identification ─────────────────────────────────
+    organization = models.ForeignKey(
+        'enterprises.Organization',
+        on_delete=models.CASCADE,
+        related_name='locations',
+        null=True,  # Null initially to allow migration
+        blank=True,
+        verbose_name="Organization",
+        help_text="The parent organization (Franchise/Owner) this gym belongs to."
+    )
+    
     gym_code = models.CharField(
         max_length=10,
         unique=True,

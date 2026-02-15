@@ -12,153 +12,395 @@
 {% endblock %}
 
 {% block content %}
-<form method="post" class="max-w-3xl">
-    {% csrf_token %}
-    {% if form.errors %}
-    <div class="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 mb-6">
-        <h4 class="text-sm font-medium text-rose-400 mb-2">Please fix the errors:</h4>
-        <ul class="list-disc list-inside text-sm text-rose-300 space-y-1">
-            {% for field, errors in form.errors.items %}{% for error in errors %}<li>{{ field|title }}: {{ error }}</li>{% endfor %}{% endfor %}
-        </ul>
-    </div>
-    {% endif %}
 
-    <!-- Personal Info -->
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-4">
-        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Personal Information</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-slate-300 mb-1">Full Name *</label>
-                <input type="text" name="name" value="{{ form.name.value|default:'' }}" required
-                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Raj Patel">
+    <!-- Tabs -->
+    <div class="flex space-x-1 bg-slate-800/50 p-1 rounded-xl mb-6 w-fit">
+        <button onclick="switchTab('manual')" id="btn-manual" class="px-4 py-2 text-sm font-medium rounded-lg transition-all bg-brand-600 text-white shadow-lg shadow-brand-500/20">Manual Entry</button>
+        <button onclick="switchTab('bulk')" id="btn-bulk" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition-all">Bulk Upload</button>
+        <button onclick="switchTab('scan')" id="btn-scan" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Scan Card <span class="bg-gradient-to-r from-pink-500 to-violet-500 text-[10px] px-1.5 py-0.5 rounded text-white ml-1">AI</span>
+        </button>
+    </div>
+
+    <!-- Manual Entry Form -->
+    <div id="tab-manual" class="tab-content transition-all duration-300">
+        <form method="post" class="max-w-3xl">
+            {% csrf_token %}
+            {% if form.errors %}
+            <div class="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 mb-6">
+                <h4 class="text-sm font-medium text-rose-400 mb-2">Please fix the errors:</h4>
+                <ul class="list-disc list-inside text-sm text-rose-300 space-y-1">
+                    {% for field, errors in form.errors.items %}{% for error in errors %}<li>{{ field|title }}: {{ error }}</li>{% endfor %}{% endfor %}
+                </ul>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Phone *</label>
-                <input type="tel" name="phone" value="{{ form.phone.value|default:'' }}" required maxlength="15"
-                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="9876543210">
+            {% endif %}
+
+            <!-- Personal Info -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-4">
+                <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Personal Information</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Full Name *</label>
+                        <input type="text" id="id_name" name="name" value="{{ form.name.value|default:'' }}" required
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Raj Patel">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Phone *</label>
+                        <input type="tel" id="id_phone" name="phone" value="{{ form.phone.value|default:'' }}" required maxlength="15"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="9876543210">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                        <input type="email" id="id_email" name="email" value="{{ form.email.value|default:'' }}"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="raj@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Gender</label>
+                        <select name="gender" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="">Select</option>
+                            <option value="male" {% if form.gender.value == 'male' %}selected{% endif %}>Male</option>
+                            <option value="female" {% if form.gender.value == 'female' %}selected{% endif %}>Female</option>
+                            <option value="other" {% if form.gender.value == 'other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Date of Birth</label>
+                        <input type="date" name="date_of_birth" value="{{ form.date_of_birth.value|default:'' }}"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Email</label>
-                <input type="email" name="email" value="{{ form.email.value|default:'' }}"
-                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="raj@example.com">
+
+            <!-- Fitness -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-4">
+                <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Fitness Profile</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Goal *</label>
+                        <select name="goal" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="">Select Goal</option>
+                            <option value="weight_loss" {% if form.goal.value == 'weight_loss' %}selected{% endif %}>Weight Loss</option>
+                            <option value="muscle_gain" {% if form.goal.value == 'muscle_gain' %}selected{% endif %}>Muscle Gain</option>
+                            <option value="general_fitness" {% if form.goal.value == 'general_fitness' %}selected{% endif %}>General Fitness</option>
+                            <option value="strength" {% if form.goal.value == 'strength' %}selected{% endif %}>Strength</option>
+                            <option value="flexibility" {% if form.goal.value == 'flexibility' %}selected{% endif %}>Flexibility</option>
+                            <option value="sports" {% if form.goal.value == 'sports' %}selected{% endif %}>Sports</option>
+                            <option value="rehab" {% if form.goal.value == 'rehab' %}selected{% endif %}>Rehab</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Experience</label>
+                        <select name="experience_level" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="beginner" {% if form.experience_level.value == 'beginner' %}selected{% endif %}>Beginner</option>
+                            <option value="intermediate" {% if form.experience_level.value == 'intermediate' %}selected{% endif %}>Intermediate</option>
+                            <option value="advanced" {% if form.experience_level.value == 'advanced' %}selected{% endif %}>Advanced</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Height (cm)</label>
+                        <input type="number" name="height_cm" value="{{ form.height_cm.value|default:'' }}" step="0.1"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="175">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Weight (kg)</label>
+                        <input type="number" name="weight_kg" value="{{ form.weight_kg.value|default:'' }}" step="0.1"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="72">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Diet</label>
+                        <select name="dietary_preference" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="veg" {% if form.dietary_preference.value == 'veg' %}selected{% endif %}>Veg</option>
+                            <option value="non_veg" {% if form.dietary_preference.value == 'non_veg' %}selected{% endif %}>Non-Veg</option>
+                            <option value="eggetarian" {% if form.dietary_preference.value == 'eggetarian' %}selected{% endif %}>Eggetarian</option>
+                            <option value="vegan" {% if form.dietary_preference.value == 'vegan' %}selected{% endif %}>Vegan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Medical Conditions</label>
+                        <input type="text" name="medical_conditions" value="{{ form.medical_conditions.value|default:'' }}"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="None">
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Gender</label>
-                <select name="gender" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <option value="">Select</option>
-                    <option value="male" {% if form.gender.value == 'male' %}selected{% endif %}>Male</option>
-                    <option value="female" {% if form.gender.value == 'female' %}selected{% endif %}>Female</option>
-                    <option value="other" {% if form.gender.value == 'other' %}selected{% endif %}>Other</option>
-                </select>
+
+            <!-- Membership -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-4">
+                <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Membership</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Plan</label>
+                        <select name="membership_plan" id="id_plan" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500" onchange="updateExpiry()">
+                            <option value="">No Plan</option>
+                            {% for plan in plans %}<option value="{{ plan.id }}" data-duration="{{ plan.duration_months }}" {% if form.membership_plan.value|stringformat:"s" == plan.id|stringformat:"s" %}selected{% endif %}>{{ plan.name }} (₹{{ plan.price }})</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Trainer</label>
+                        <select name="assigned_trainer" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="">No Trainer</option>
+                            {% for trainer in trainers %}<option value="{{ trainer.id }}" {% if form.assigned_trainer.value|stringformat:"s" == trainer.id|stringformat:"s" %}selected{% endif %}>{{ trainer.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Join Date</label>
+                        <input type="date" name="join_date" value="{{ form.join_date.value|default:today }}"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Expiry Date *</label>
+                        <input type="date" name="membership_expiry" value="{{ form.membership_expiry.value|default:'' }}"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Amount Paid (₹)</label>
+                        <input type="number" name="amount_paid" value="{{ form.amount_paid.value|default:'0' }}" step="0.01"
+                            class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="5000">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Status</label>
+                        <select name="status" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="active" {% if form.status.value == 'active' %}selected{% endif %}>Active</option>
+                            <option value="expired" {% if form.status.value == 'expired' %}selected{% endif %}>Expired</option>
+                            <option value="frozen" {% if form.status.value == 'frozen' %}selected{% endif %}>Frozen</option>
+                            <option value="cancelled" {% if form.status.value == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Date of Birth</label>
-                <input type="date" name="date_of_birth" value="{{ form.date_of_birth.value|default:'' }}"
-                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+
+            <div class="flex items-center gap-3">
+                <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-2.5 rounded-xl transition-all active:scale-[0.98]">{{ submit_label|default:"Add Member" }}</button>
+                <a href="{% url 'frontend:member-list' %}" class="px-6 py-2.5 rounded-xl text-slate-400 hover:text-white border border-slate-700 hover:border-slate-600 transition-all">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bulk Upload Tab -->
+    <div id="tab-bulk" class="tab-content transition-all duration-300 hidden">
+        <div class="max-w-xl mx-auto text-center py-10">
+            <div class="mb-6">
+                <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Bulk Import Members</h3>
+                <p class="text-slate-400 text-sm">Upload a CSV or Excel file to add multiple members at once.</p>
+            </div>
+
+            <div class="flex justify-center gap-4 mb-8">
+                <a href="{% url 'frontend:member-import-sample' %}?format=csv" class="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-brand-400 text-xs font-medium rounded-lg border border-slate-700 transition">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Sample CSV
+                </a>
+                <a href="{% url 'frontend:member-import-sample' %}?format=xlsx" class="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-medium rounded-lg border border-slate-700 transition">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Sample Excel
+                </a>
+            </div>
+
+            <form id="bulk-form" onsubmit="handleBulkUpload(event)" class="space-y-4">
+                <label class="block w-full cursor-pointer hover:border-brand-500 border-2 border-dashed border-slate-700 rounded-xl p-8 transition-colors group">
+                    <input type="file" id="bulk-file" accept=".csv, .xlsx, .xls" class="hidden" onchange="this.nextElementSibling.textContent = this.files[0]?.name || 'Click to select file'">
+                    <span class="text-slate-500 group-hover:text-brand-400 transition-colors">Click to select file (.csv, .xlsx)</span>
+                </label>
+                <button type="submit" id="btn-bulk-upload" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-3 rounded-xl transition-all active:scale-[0.98]">
+                    Upload & Import
+                </button>
+            </form>
+
+            <div id="bulk-result" class="mt-6 hidden"></div>
+        </div>
+    </div>
+
+    <!-- Scan Card Tab -->
+    <div id="tab-scan" class="tab-content transition-all duration-300 hidden">
+        <div class="max-w-xl mx-auto text-center py-10">
+            <div class="relative mb-6">
+                <div class="absolute inset-0 bg-gradient-to-r from-pink-500/20 to-violet-500/20 blur-xl rounded-full"></div>
+                <div class="relative w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-700 shadow-2xl">
+                    <svg class="w-10 h-10 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+            </div>
+            
+            <h3 class="text-xl font-bold text-white mb-2">AI Card Scan</h3>
+            <p class="text-slate-400 text-sm mb-8">Take a photo of a membership card. AI will extract details and fill the form.</p>
+
+            <label class="block w-full cursor-pointer bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl p-4 mb-6 transition-all group">
+                <input type="file" id="scan-file" accept="image/*" capture="environment" class="hidden" onchange="handleScan(this)">
+                <div class="flex items-center justify-center gap-3">
+                    <svg class="w-6 h-6 text-brand-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+                    <span class="text-slate-300 font-medium group-hover:text-white">Take Photo / Upload Image</span>
+                </div>
+            </label>
+
+            <div id="scan-status" class="hidden">
+                <div class="flex items-center justify-center gap-3 text-brand-400 animate-pulse">
+                    <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span>Analyzing card with AI...</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Fitness -->
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-4">
-        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Fitness Profile</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Goal *</label>
-                <select name="goal" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <option value="">Select Goal</option>
-                    <option value="weight_loss" {% if form.goal.value == 'weight_loss' %}selected{% endif %}>Weight Loss</option>
-                    <option value="muscle_gain" {% if form.goal.value == 'muscle_gain' %}selected{% endif %}>Muscle Gain</option>
-                    <option value="general_fitness" {% if form.goal.value == 'general_fitness' %}selected{% endif %}>General Fitness</option>
-                    <option value="strength" {% if form.goal.value == 'strength' %}selected{% endif %}>Strength</option>
-                    <option value="flexibility" {% if form.goal.value == 'flexibility' %}selected{% endif %}>Flexibility</option>
-                    <option value="sports" {% if form.goal.value == 'sports' %}selected{% endif %}>Sports</option>
-                    <option value="rehab" {% if form.goal.value == 'rehab' %}selected{% endif %}>Rehab</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Experience</label>
-                <select name="experience_level" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <option value="beginner" {% if form.experience_level.value == 'beginner' %}selected{% endif %}>Beginner</option>
-                    <option value="intermediate" {% if form.experience_level.value == 'intermediate' %}selected{% endif %}>Intermediate</option>
-                    <option value="advanced" {% if form.experience_level.value == 'advanced' %}selected{% endif %}>Advanced</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Height (cm)</label>
-                <input type="number" name="height_cm" value="{{ form.height_cm.value|default:'' }}" step="0.1"
-                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="175">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Weight (kg)</label>
-                <input type="number" name="weight_kg" value="{{ form.weight_kg.value|default:'' }}" step="0.1"
-                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="72">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Diet</label>
-                <select name="dietary_preference" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <option value="veg" {% if form.dietary_preference.value == 'veg' %}selected{% endif %}>Veg</option>
-                    <option value="non_veg" {% if form.dietary_preference.value == 'non_veg' %}selected{% endif %}>Non-Veg</option>
-                    <option value="eggetarian" {% if form.dietary_preference.value == 'eggetarian' %}selected{% endif %}>Eggetarian</option>
-                    <option value="vegan" {% if form.dietary_preference.value == 'vegan' %}selected{% endif %}>Vegan</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Medical Conditions</label>
-                <input type="text" name="medical_conditions" value="{{ form.medical_conditions.value|default:'' }}"
-                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="None">
-            </div>
-        </div>
-    </div>
+    <!-- Scripts -->
+    <script>
+        function switchTab(tab) {
+            // Buttons
+            document.querySelectorAll('[id^="btn-"]').forEach(btn => {
+                if(btn.id === 'btn-'+tab) {
+                    btn.classList.add('bg-brand-600', 'text-white', 'shadow-lg', 'shadow-brand-500/20');
+                    btn.classList.remove('text-slate-400');
+                } else {
+                    btn.classList.remove('bg-brand-600', 'text-white', 'shadow-lg', 'shadow-brand-500/20');
+                    btn.classList.add('text-slate-400');
+                }
+            });
 
-    <!-- Membership -->
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-4">
-        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Membership</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Plan</label>
-                <select name="membership_plan" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <option value="">No Plan</option>
-                    {% for plan in plans %}<option value="{{ plan.id }}" {% if form.membership_plan.value|stringformat:"s" == plan.id|stringformat:"s" %}selected{% endif %}>{{ plan.name }} (₹{{ plan.price }})</option>{% endfor %}
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Trainer</label>
-                <select name="assigned_trainer" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <option value="">No Trainer</option>
-                    {% for trainer in trainers %}<option value="{{ trainer.id }}" {% if form.assigned_trainer.value|stringformat:"s" == trainer.id|stringformat:"s" %}selected{% endif %}>{{ trainer.name }}</option>{% endfor %}
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Join Date</label>
-                <input type="date" name="join_date" value="{{ form.join_date.value|default:today }}"
-                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Expiry Date</label>
-                <input type="date" name="membership_expiry" value="{{ form.membership_expiry.value|default:'' }}"
-                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Amount Paid (₹)</label>
-                <input type="number" name="amount_paid" value="{{ form.amount_paid.value|default:'0' }}" step="0.01"
-                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="5000">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-1">Status</label>
-                <select name="status" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <option value="active" {% if form.status.value == 'active' %}selected{% endif %}>Active</option>
-                    <option value="expired" {% if form.status.value == 'expired' %}selected{% endif %}>Expired</option>
-                    <option value="frozen" {% if form.status.value == 'frozen' %}selected{% endif %}>Frozen</option>
-                    <option value="cancelled" {% if form.status.value == 'cancelled' %}selected{% endif %}>Cancelled</option>
-                </select>
-            </div>
-        </div>
-    </div>
+            // Content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                if(content.id === 'tab-'+tab) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        }
 
-    <div class="flex items-center gap-3">
-        <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-2.5 rounded-xl transition-all active:scale-[0.98]">{{ submit_label|default:"Add Member" }}</button>
-        <a href="{% url 'frontend:member-list' %}" class="px-6 py-2.5 rounded-xl text-slate-400 hover:text-white border border-slate-700 hover:border-slate-600 transition-all">Cancel</a>
-    </div>
-</form>
+        async function handleBulkUpload(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('bulk-file');
+            const file = fileInput.files[0];
+            if (!file) return alert("Please select a file first.");
+
+            const btn = document.getElementById('btn-bulk-upload');
+            const resultDiv = document.getElementById('bulk-result');
+            
+            btn.textContent = "Uploading...";
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch("{% url 'frontend:member-import' %}", {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                    body: formData
+                });
+                const data = await res.json();
+
+                resultDiv.classList.remove('hidden');
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm">${data.message}</div>`;
+                    setTimeout(() => window.location.href = "{% url 'frontend:member-list' %}", 2000);
+                } else {
+                    btn.textContent = "Upload & Import";
+                    btn.disabled = false;
+                    let errorHtml = data.errors.map(e => `<li>${e}</li>`).join('');
+                    resultDiv.innerHTML = `<div class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-sm"><ul class="list-disc list-inside">${errorHtml}</ul></div>`;
+                }
+            } catch (err) {
+                console.error(err);
+                btn.textContent = "Upload & Import";
+                btn.disabled = false;
+                alert("Upload failed. See console.");
+            }
+        }
+
+        async function handleScan(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const status = document.getElementById('scan-status');
+            status.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const res = await fetch("{% url 'frontend:member-scan-card' %}", {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                    body: formData
+                });
+                const data = await res.json();
+
+                status.classList.add('hidden');
+
+                if (data.success) {
+                    const info = data.data;
+                    // Switch to manual tab
+                    switchTab('manual');
+                    
+                    // Populate fields
+                    if(info.name) document.getElementById('id_name').value = info.name;
+                    if(info.phone) document.getElementById('id_phone').value = info.phone;
+                    if(info.email) document.getElementById('id_email').value = info.email;
+                    
+                    // Highlight generic success
+                    alert(`Scanned successfully!\nName: ${info.name}\nPhone: ${info.phone}`);
+                } else {
+                    alert("Scan failed: " + data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                status.classList.add('hidden');
+                alert("Scan request failed.");
+            }
+        }
+
+        function updateExpiry() {
+            const planSelect = document.getElementById('id_plan');
+            const selectedOption = planSelect.options[planSelect.selectedIndex];
+            const durationMonths = parseInt(selectedOption.getAttribute('data-duration') || 0);
+            
+            if (durationMonths > 0) {
+                // Get start date or use today
+                const startDateInput = document.querySelector('input[name="membership_start"]'); // It might wait, check field name in html
+                // In HTML it is name="join_date" ? No, let's check.
+                // Line 147: <input type="date" name="join_date" ...> 
+                // Line 152: <input type="date" name="membership_expiry" ...>
+                // Wait, where is membership_start?
+                // Line 521 in views.py: if not member.membership_start: member.membership_start = timezone.now().date()
+                // In ModelForm fields: 'join_date', 'membership_start', 'membership_expiry'.
+                // In HTML template: I see 'Join Date' (name="join_date"). I DO NOT see 'Membership Start Date'.
+                
+                // Let's assume Join Date is the start date for now, or check if I missed membership_start in HTML.
+                // In step 1535 (HTML view), I see:
+                // 146: <label ...>Join Date</label>
+                // 147: <input type="date" name="join_date" ...>
+                // 151: <label ...>Expiry Date</label>
+                // 152: <input name="membership_expiry" ...>
+                
+                // There is NO `membership_start` input in the HTML form!
+                // But `MemberForm` has it in `fields`.
+                // And `MemberCreateView` sets it if missing:
+                // if not member.membership_start: member.membership_start = timezone.now().date()
+                
+                // So I should base it on `join_date` if that's what the user sees as "Start".
+                // OR I should use today's date if join_date is not the start.
+                // Generally Join Date == Start Date for new members.
+                
+                const joinDateInput = document.querySelector('input[name="join_date"]');
+                let startDate = new Date();
+                if (joinDateInput && joinDateInput.value) {
+                    startDate = new Date(joinDateInput.value);
+                }
+                
+                // Add months
+                startDate.setMonth(startDate.getMonth() + durationMonths);
+                
+                // Format YYYY-MM-DD
+                const yyyy = startDate.getFullYear();
+                const mm = String(startDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(startDate.getDate()).padStart(2, '0');
+                
+                const expiryInput = document.querySelector('input[name="membership_expiry"]');
+                if (expiryInput) {
+                    expiryInput.value = `${yyyy}-${mm}-${dd}`;
+                }
+            }
+        }
+    </script>
+
 {% endblock %}

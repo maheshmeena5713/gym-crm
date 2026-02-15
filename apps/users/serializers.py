@@ -101,7 +101,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
         ]
 
 
+
+class AccountListSerializer(serializers.ModelSerializer):
+    """Serializer for list of accounts in multi-login scenario."""
+    gym_name = serializers.CharField(source='gym.name', read_only=True)
+    role_display = serializers.CharField(source='get_role_display', read_only=True)
+
+    class Meta:
+        model = GymUser
+        fields = ['id', 'name', 'gym_name', 'role_display', 'role']
+
+
+class SelectAccountSerializer(serializers.Serializer):
+    """Validate account selection token and user ID."""
+    account_id = serializers.UUIDField()
+    selection_token = serializers.CharField()
+
+
 class OTPResponseSerializer(serializers.Serializer):
     """Response for send OTP."""
     success = serializers.BooleanField()
     message = serializers.CharField()
+
