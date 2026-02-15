@@ -18,6 +18,7 @@ Support for Multi-Brand Portfolios and Franchise Operations.
 *   **Royalty Tracking:** Automated calculation of franchise royalties.
 
 👉 **[Read the Enterprise Admin Guide](ENTERPRISE_GUIDE.md)**
+👉 **[View the Product Flow Diagram](PRODUCT_FLOW.md)**
 
 ## 🛠️ Technical Stack
 *   **Backend:** Django 5.x, Python 3.x
