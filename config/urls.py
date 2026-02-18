@@ -24,6 +24,7 @@ api_v1_urlpatterns = [
     path('members/', include('apps.members.urls')),
     path('membership-plans/', include('apps.members.urls_plans')),
     path('enterprises/', include('apps.enterprises.urls')),
+    path('', include('apps.leads.api.urls')),
 ]
 
 urlpatterns = [
@@ -33,6 +34,8 @@ urlpatterns = [
 
     # Frontend (Template-based)
     path('', include('apps.frontend.urls')),
+    path('', include('apps.ai_engine.urls')),
+    path('leads/', include('apps.leads.urls')),
 
     # API v1
     path('api/v1/', include((api_v1_urlpatterns, 'api-v1'))),

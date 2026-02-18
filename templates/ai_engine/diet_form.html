@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Diet Plan{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex mb-4" aria-label="Breadcrumb">
+  <ol class="inline-flex items-center space-x-1 md:space-x-3">
+    <li class="inline-flex items-center">
+      <a href="{% url 'frontend:dashboard' %}" class="inline-flex items-center text-sm font-medium text-slate-400 hover:text-white">
+        Dashboard
+      </a>
+    </li>
+    <li>
+      <div class="flex items-center">
+        <svg class="w-3 h-3 text-slate-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+        </svg>
+        <a href="{% url 'ai_engine:diet-list' %}" class="ml-1 text-sm font-medium text-slate-400 hover:text-white md:ml-2">Diet Plans</a>
+      </div>
+    </li>
+    <li>
+      <div class="flex items-center">
+        <svg class="w-3 h-3 text-slate-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+        </svg>
+        <span class="ml-1 text-sm font-medium text-slate-100 md:ml-2">Generate</span>
+      </div>
+    </li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+    <div class="bg-slate-900 rounded-xl border border-slate-800 p-6 shadow-lg">
+        <h1 class="text-2xl font-bold text-white mb-2">Generate Diet Plan</h1>
+        <p class="text-slate-400 mb-6">Create a personalized Indian meal plan based on calories and preferences.</p>
+
+        {% if messages %}
+        <div class="mb-6 space-y-2">
+            {% for message in messages %}
+            <div class="p-4 rounded-lg text-sm {% if message.tags == 'error' %}bg-red-500/10 text-red-400 border border-red-500/20{% else %}bg-green-500/10 text-green-400 border border-green-500/20{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="POST" class="space-y-5" x-data="{ loading: false }" @submit="loading = true">
+            {% csrf_token %}
+            
+            <!-- Member Select -->
+            <div>
+                <label for="member" class="block mb-2 text-sm font-medium text-slate-300">Select Member</label>
+                <select name="member" id="member" required class="bg-slate-950 border border-slate-700 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                    <option value="">-- Choose Member --</option>
+                    {% for member in members %}
+                    <option value="{{ member.id }}">{{ member.name }} ({{ member.phone }})</option>
+                    {% endfor %}
+                </select>
+                <p class="mt-1 text-xs text-slate-500">Only active members are shown.</p>
+            </div>
+
+            <!-- Calorie Target -->
+            <div>
+                <label for="calories" class="block mb-2 text-sm font-medium text-slate-300">Daily Calorie Target</label>
+                <input type="number" id="calories" name="calories" class="bg-slate-950 border border-slate-700 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5" placeholder="e.g. 2000" min="1000" max="5000" required>
+                <p class="mt-1 text-xs text-slate-500">Recommended based on BMR (Auto-calc coming soon)</p>
+            </div>
+
+            <!-- Dietary Preference -->
+            <div>
+                <label for="preference" class="block mb-2 text-sm font-medium text-slate-300">Dietary Preference</label>
+                <select name="preference" id="preference" required class="bg-slate-950 border border-slate-700 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                    <option value="veg">Vegetarian</option>
+                    <option value="non-veg">Non-Vegetarian</option>
+                    <option value="vegan">Vegan</option>
+                    <option value="eggetarian">Eggetarian</option>
+                    <option value="jain">Jain</option>
+                </select>
+            </div>
+
+            <!-- Budget -->
+            <div>
+                <label for="budget" class="block mb-2 text-sm font-medium text-slate-300">Budget Level</label>
+                <select name="budget" id="budget" required class="bg-slate-950 border border-slate-700 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                    <option value="low">Low (Home-cooked, simple)</option>
+                    <option value="medium" selected>Medium (Standard)</option>
+                    <option value="high">High (Premium ingredients)</option>
+                </select>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" :disabled="loading" class="w-full text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:outline-none focus:ring-indigo-800 font-medium rounded-lg text-sm px-5 py-3 text-center transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                <span x-show="!loading">Generate Diet Plan (AI)</span>
+                <span x-show="loading" class="flex items-center gap-2">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating...
+                </span>
+            </button>
+            <p class="text-center text-xs text-slate-500">Takes about 5-10 seconds to generate.</p>
+        </form>
+    </div>
+</div>
+{% endblock %}

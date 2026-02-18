@@ -107,6 +107,29 @@ class Lead(BaseModel):
         verbose_name="AI Follow-up Date",
     )
 
+    # ── Manual Tracking ───────────────────────────────────────
+    last_contacted_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Last Contacted",
+    )
+    next_followup_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Next Follow-up",
+        help_text="Manual follow-up date set by staff",
+    )
+    trial_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Trial Date",
+    )
+    converted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Converted At",
+    )
+
     # ── Assignment & Notes ────────────────────────────────────
     assigned_to = models.ForeignKey(
         'users.GymUser',

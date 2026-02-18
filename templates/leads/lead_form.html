@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if object %}Edit Lead{% else %}Add New Lead{% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+<nav class="flex mb-4" aria-label="Breadcrumb">
+  <ol class="inline-flex items-center space-x-1 md:space-x-3">
+    <li class="inline-flex items-center">
+      <a href="{% url 'frontend:dashboard' %}" class="inline-flex items-center text-sm font-medium text-slate-400 hover:text-white">
+        Dashboard
+      </a>
+    </li>
+    <li>
+      <div class="flex items-center">
+        <svg class="w-3 h-3 text-slate-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+        </svg>
+        <a href="{% url 'leads:lead-list' %}" class="ml-1 text-sm font-medium text-slate-400 hover:text-white md:ml-2">Leads</a>
+      </div>
+    </li>
+    <li>
+      <div class="flex items-center">
+        <svg class="w-3 h-3 text-slate-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+        </svg>
+        <span class="ml-1 text-sm font-medium text-slate-100 md:ml-2">{% if object %}Edit{% else %}Add{% endif %}</span>
+      </div>
+    </li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden">
+        <div class="p-6 border-b border-slate-700">
+            <h2 class="text-xl font-bold text-white">{% if object %}Edit Lead{% else %}Add New Lead{% endif %}</h2>
+            <p class="text-slate-400 text-sm mt-1">Fill in the details below.</p>
+        </div>
+        
+        <form method="post" class="p-6 space-y-6">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-lg">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Name -->
+                <div>
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+                    <input type="text" name="{{ form.name.name }}" id="{{ form.name.id_for_label }}" 
+                           value="{{ form.name.value|default:'' }}"
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                    {% if form.name.errors %}
+                        <p class="mt-1 text-sm text-red-400">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Phone & Email -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-2">Phone Number</label>
+                        <input type="tel" name="{{ form.phone.name }}" id="{{ form.phone.id_for_label }}" 
+                               value="{{ form.phone.value|default:'' }}"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                        {% if form.phone.errors %}
+                            <p class="mt-1 text-sm text-red-400">{{ form.phone.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-2">Email (Optional)</label>
+                        <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}" 
+                               value="{{ form.email.value|default:'' }}"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        {% if form.email.errors %}
+                            <p class="mt-1 text-sm text-red-400">{{ form.email.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Source & Goal -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.source.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-2">Lead Source</label>
+                        <select name="{{ form.source.name }}" id="{{ form.source.id_for_label }}" 
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            {% for value, label in form.fields.source.choices %}
+                                <option value="{{ value }}" {% if form.source.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="{{ form.goal.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-2">Fitness Goal</label>
+                        <select name="{{ form.goal.name }}" id="{{ form.goal.id_for_label }}" 
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            {% for value, label in form.fields.goal.choices %}
+                                <option value="{{ value }}" {% if form.goal.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Status & Budget (Only for Edit) -->
+                {% if object %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div>
+                        <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-2">Status</label>
+                        <select name="{{ form.status.name }}" id="{{ form.status.id_for_label }}" 
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            {% for value, label in form.fields.status.choices %}
+                                <option value="{{ value }}" {% if form.status.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                     <div>
+                        <label for="{{ form.next_followup_date.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-2">Next Follow-up</label>
+                        <input type="date" name="{{ form.next_followup_date.name }}" id="{{ form.next_followup_date.id_for_label }}" 
+                               value="{{ form.next_followup_date.value|date:'Y-m-d'|default:'' }}"
+                               class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                </div>
+                {% endif %}
+
+                 <!-- Budget -->
+                 <div>
+                    <label for="{{ form.budget_range.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-2">Budget Range</label>
+                    <select name="{{ form.budget_range.name }}" id="{{ form.budget_range.id_for_label }}" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        {% for value, label in form.fields.budget_range.choices %}
+                            <option value="{{ value }}" {% if form.budget_range.value == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+
+                <!-- Notes -->
+                <div>
+                    <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-2">Notes</label>
+                    <textarea name="{{ form.notes.name }}" id="{{ form.notes.id_for_label }}" rows="4"
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">{{ form.notes.value|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
+                <a href="{% url 'leads:lead-list' %}" class="px-4 py-2 text-slate-400 hover:text-white transition-colors">Cancel</a>
+                <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors">
+                    {% if object %}Save Changes{% else %}Create Lead{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
