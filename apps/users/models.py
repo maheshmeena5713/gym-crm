@@ -15,10 +15,14 @@ from apps.core.models import ActiveManager
 class GymUserManager(BaseUserManager):
     """Custom manager for GymUser with phone-based authentication."""
 
-    def create_user(self, phone, name, gym=None, role='trainer', password=None, **extra_fields):
+    def create_user(self, username, phone, name, gym=None, role='trainer', password=None, **extra_fields):
+        if not username:
+            raise ValueError('Username is required')
         if not phone:
             raise ValueError('Phone number is required')
+            
         user = self.model(
+            username=username,
             phone=phone,
             name=name,
             gym=gym,
@@ -32,7 +36,7 @@ class GymUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, phone, name, password=None, **extra_fields):
+    def create_superuser(self, username, phone, name, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('role', 'owner')
@@ -42,7 +46,7 @@ class GymUserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superuser must have is_superuser=True.')
 
-        return self.create_user(phone, name, password=password, **extra_fields)
+        return self.create_user(username, phone, name, password=password, **extra_fields)
 
 
 class GymUser(AbstractBaseUser, PermissionsMixin):
@@ -87,12 +91,13 @@ class GymUser(AbstractBaseUser, PermissionsMixin):
     )
     username = models.CharField(
         max_length=30,
-        null=True,
-        blank=True,
-        unique=False,  # Changed from True to False for multi-gym support
+        unique=True,  # Changed to True for USERNAME_FIELD
         db_index=True,
         verbose_name="Username",
         help_text="Login username (lowercase, 4-30 chars, alphanumeric + underscores)",
+        error_messages={
+            'unique': "A user with that username already exists.",
+        },
     )
     name = models.CharField(
         max_length=255,
@@ -129,6 +134,15 @@ class GymUser(AbstractBaseUser, PermissionsMixin):
         blank=True,
         related_name='staff',
         verbose_name="Organization"
+    )
+
+    # ── Multi-Location Access ─────────────────────────────────
+    locations = models.ManyToManyField(
+        'gyms.Gym',
+        blank=True,
+        related_name='authorized_users',
+        verbose_name="Authorized Locations",
+        help_text="Specific locations this user can access. Empty = all locations (for owners)"
     )
 
     # ── Role-Based Access ─────────────────────────────────────
@@ -206,8 +220,8 @@ class GymUser(AbstractBaseUser, PermissionsMixin):
     objects = GymUserManager()
     active_objects = ActiveManager()
 
-    USERNAME_FIELD = 'phone'
-    REQUIRED_FIELDS = ['name']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['phone', 'name']
 
     class Meta:
         db_table = 'users_gymuser'

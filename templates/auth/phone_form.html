@@ -1,11 +1,32 @@
-<!-- Step 2: Login — Tabbed (OTP / Password) with gym branding -->
-{% if gym_logo %}
-<div class="text-center mb-5">
-    <img src="{{ gym_logo }}" alt="{{ gym_name }}" class="w-14 h-14 rounded-xl mx-auto mb-2 object-cover shadow-lg">
-    <p class="text-sm font-semibold text-white">{{ gym_name }}</p>
-    <p class="text-xs text-slate-500">Code: {{ gym_code }}</p>
+<!-- Step 2: Login — Tabbed (OTP / Password) with entity branding -->
+
+<!-- Back Arrow (Switch Gym) -->
+<div class="mb-4">
+    <button type="button"
+            hx-get="{% url 'frontend:login' %}?clear=1"
+            hx-target="#auth-form"
+            hx-swap="innerHTML"
+            class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors group">
+        <svg class="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Switch Gym
+    </button>
 </div>
-{% endif %}
+
+<div class="text-center mb-5">
+    {% if gym_logo %}
+    <img src="{{ gym_logo }}" alt="{{ entity_name }}" class="w-14 h-14 rounded-xl mx-auto mb-2 object-cover shadow-lg">
+    {% else %}
+    <div class="w-14 h-14 rounded-xl mx-auto mb-2 flex items-center justify-center bg-slate-800 text-2xl font-bold text-white shadow-lg">
+        {{ entity_name|slice:":1" }}
+    </div>
+    {% endif %}
+    <p class="text-sm font-semibold text-white">{{ entity_name }}</p>
+    <p class="text-xs text-slate-500">
+        {{ entity_type_label }}
+    </p>
+</div>
 
 <!-- Tab Switcher -->
 <div class="flex bg-slate-800 rounded-xl p-1 mb-5 gap-1">
@@ -13,13 +34,13 @@
             onclick="switchTab('otp')"
             class="flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all duration-200
                    {% if active_tab == 'password' %}text-slate-400 hover:text-slate-200{% else %}bg-brand-600 text-white shadow-md{% endif %}">
-        📱 OTP Login
+        Login with OTP
     </button>
     <button type="button" id="tab-pw-btn"
             onclick="switchTab('password')"
             class="flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all duration-200
                    {% if active_tab == 'password' %}bg-brand-600 text-white shadow-md{% else %}text-slate-400 hover:text-slate-200{% endif %}">
-        🔑 Password
+        Login with Password
     </button>
 </div>
 
@@ -47,13 +68,14 @@
                 </span>
                 <input type="tel" name="phone" id="phone"
                        value="{{ phone|default:'' }}"
-                       placeholder="Enter your 10-digit number"
+                       placeholder="9876543210"
                        maxlength="10" pattern="[0-9]{10}"
                        class="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white
                               placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
                               transition-all"
                        autofocus required>
             </div>
+            <p class="text-xs text-slate-500 mt-2">We'll send a 6-digit OTP via SMS</p>
         </div>
 
         <button type="submit"
@@ -92,7 +114,7 @@
             <label for="identifier" class="block text-sm font-medium text-slate-300 mb-2">Email or Username</label>
             <input type="text" name="identifier" id="identifier"
                    value="{{ identifier|default:'' }}"
-                   placeholder="e.g. rahul@email.com or @rahul_fit"
+                   placeholder="Email or username"
                    class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white
                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
                           transition-all"

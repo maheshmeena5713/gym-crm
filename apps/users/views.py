@@ -200,3 +200,126 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+# ── Unified Login (Entity Code Based) ────────────────────────
+
+class UnifiedLoginView(APIView):
+    """
+    Unified Login Endpoint - Entity Code Based
+    
+    POST /api/v1/auth/login/
+    Body: {
+        "entity_code": "GYM7654321",
+        "username": "owner1",
+        "password": "secure123"
+    }
+    
+    Returns: JWT tokens + user profile with organization and locations
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(
+        tags=['Auth'],
+        request='apps.users.serializers.UnifiedLoginSerializer',
+        responses={200: 'apps.users.serializers.UnifiedLoginResponseSerializer'},
+        summary="Unified Login (Entity Code)",
+        description=(
+            "Authenticate using entity code + username + password. "
+            "Entity code identifies the organization, username identifies the user. "
+            "Returns JWT tokens and user profile with accessible locations."
+        ),
+    )
+    def post(self, request):
+        from apps.users.serializers import UnifiedLoginSerializer, UserLoginProfileSerializer
+        from apps.enterprises.models import Organization
+        from django.contrib.auth import authenticate
+        
+        serializer = UnifiedLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        entity_code = serializer.validated_data['entity_code']
+        username = serializer.validated_data['username']
+        password = serializer.validated_data['password']
+
+        # Step 1: Validate entity code and get organization
+        try:
+            organization = Organization.objects.get(
+                entity_code=entity_code,
+                is_active=True
+            )
+        except Organization.DoesNotExist:
+            logger.warning(f"Invalid entity code attempted: {entity_code}")
+            return Response(
+                {
+                    'success': False,
+                    'error': 'invalid_entity_code',
+                    'message': 'Invalid entity code. Please check and try again.'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Step 2: Authenticate user credentials
+        user = authenticate(request, username=username, password=password)
+        
+        if not user:
+            logger.warning(f"Failed login attempt for {username} on entity {entity_code}")
+            return Response(
+                {
+                    'success': False,
+                    'error': 'invalid_credentials',
+                    'message': 'Invalid username or password.'
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Step 3: Verify user belongs to this organization
+        if user.organization_id != organization.id:
+            logger.warning(
+                f"User {username} attempted login to wrong organization: "
+                f"belongs to {user.organization_id}, tried {organization.id}"
+            )
+            return Response(
+                {
+                    'success': False,
+                    'error': 'not_authorized',
+                    'message': 'You are not authorized to access this organization.'
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Step 4: Check if user is active
+        if not user.is_active:
+            return Response(
+                {
+                    'success': False,
+                    'error': 'account_inactive',
+                    'message': 'Your account has been deactivated. Please contact your administrator.'
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Step 5: Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        
+        # Step 6: Determine permissions based on role
+        permissions = {
+            'can_view_all_locations': user.role in ['owner', 'org_admin'],
+            'can_view_revenue': user.can_view_revenue,
+            'can_manage_members': user.can_manage_members,
+            'can_manage_leads': user.can_manage_leads,
+            'can_use_ai': user.can_use_ai,
+        }
+
+        # Step 7: Return response with tokens and user profile
+        response_data = {
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': UserLoginProfileSerializer(user).data,
+            'permissions': permissions
+        }
+
+        logger.info(f"Successful login: {user.username} ({user.role}) on entity {entity_code}")
+        
+        return Response(response_data, status=status.HTTP_200_OK)

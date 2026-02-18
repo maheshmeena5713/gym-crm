@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}GymAI{% endblock %} | Gym AI SaaS</title>
+    <title>{% block title %}GymEdge{% endblock %} | GymEdge SaaS</title>
     <meta name="description" content="AI-powered gym management platform">
 
     <!-- Google Font (dynamic per gym) -->
@@ -129,9 +129,27 @@
         </div>
     </div>
     {% else %}
-    <!-- Auth pages (no sidebar) -->
-    <div class="min-h-screen flex items-center justify-center">
-        {% block auth_content %}{% endblock %}
+    <!-- Public/Auth Pages -->
+    <div class="min-h-screen flex flex-col bg-slate-950">
+        <!-- Public Header -->
+        {% include "components/public_header.html" %}
+
+        <!-- Main Content -->
+        <main class="flex-1 flex items-center justify-center pt-20 pb-10 px-4 relative">
+            <!-- Background effects for auth pages -->
+            <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+                <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl opacity-50"></div>
+                <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-cyan-600/10 rounded-full blur-3xl opacity-50"></div>
+            </div>
+            
+            <div class="relative z-10 w-full max-w-md">
+                {% block auth_content %}{% endblock %}
+            </div>
+        </main>
+
+        <!-- Public Footer -->
+        <!-- Only show footer on auth pages if desired, or keep it sticky at bottom -->
+        {% include "components/public_footer.html" %}
     </div>
     {% endif %}
 

@@ -11,17 +11,20 @@
     {% endif %}
 
     <div>
-        <label for="gym_code" class="block text-sm font-medium text-slate-300 mb-2">Gym Code</label>
-        <input type="text" name="gym_code" id="gym_code"
-               value="{{ gym_code|default:'' }}"
-               placeholder="e.g. GYM4829156"
-               maxlength="10"
-               class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white text-center
-                      text-lg font-mono tracking-widest uppercase
-                      placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-                      transition-all"
-               autofocus required>
-        <p class="text-xs text-slate-500 mt-2">Enter the gym code provided by your gym owner</p>
+        <label for="gym_code" class="block text-sm font-medium text-slate-300 mb-2">
+            Your Gym or Branch Code
+        </label>
+        <div class="mt-1">
+            <input id="gym_code" name="entity_code" type="text" required 
+                value="{{ gym_code|default:'' }}"
+                class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white
+                       placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
+                       transition-all"
+                placeholder="e.g. GYM001 or BRANCH001">
+        </div>
+        <p class="text-xs text-slate-500 mt-2">
+            💡 <span class="font-medium">Don't have a code?</span> Contact your gym owner or check your membership card
+        </p>
     </div>
 
     <button type="submit"

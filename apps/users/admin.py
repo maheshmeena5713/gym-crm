@@ -31,7 +31,7 @@ class GymUserAdmin(ImportExportModelAdmin, BaseUserAdmin):
     resource_classes = [GymUserResource]
 
     list_display = (
-        'name', 'phone', 'gym', 'gym_code_display',
+        'name', 'phone', 'gym', 'gym_code_display', 'email', 'username',
         'role_badge', 'is_active', 'last_login', 'created_at',
     )
     list_filter = ('role', 'is_active', 'is_staff', 'is_superuser', 'gym')
@@ -45,7 +45,7 @@ class GymUserAdmin(ImportExportModelAdmin, BaseUserAdmin):
 
     fieldsets = (
         ('Identity', {
-            'fields': ('id', 'phone', 'name', 'email', 'avatar'),
+            'fields': ('id', 'phone', 'name', 'email', 'username', 'avatar'),
         }),
         ('Gym & Role', {
             'fields': ('gym', 'role'),

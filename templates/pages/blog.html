@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog | GymEdge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300">
+    <!-- Header -->
+    <header class="border-b border-slate-800 sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-white">GymEdge</a>
+            <nav class="hidden md:flex items-center gap-8">
+                <a href="/about/" class="text-slate-400 hover:text-white transition">About</a>
+                <a href="/blog/" class="text-white font-medium">Blog</a>
+                <a href="/contact/" class="text-slate-400 hover:text-white transition">Contact</a>
+                <a href="/login/" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Login</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="py-20 px-6 text-center">
+        <h1 class="text-4xl font-bold text-white mb-4">GymEdge Blog</h1>
+        <p class="text-slate-400 max-w-2xl mx-auto text-lg">Insights, tips, and strategies for modern gym management.</p>
+    </section>
+
+    <!-- Blog Grid -->
+    <section class="max-w-7xl mx-auto px-6 pb-20">
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Article 1 -->
+            <article class="bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 hover:border-indigo-500/50 transition group">
+                <div class="h-48 bg-slate-800 flex items-center justify-center">
+                   <span class="text-slate-600 font-medium">Image Placeholder</span>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center gap-3 text-sm text-slate-500 mb-3">
+                        <span class="bg-indigo-500/10 text-indigo-400 px-2.5 py-0.5 rounded-full text-xs font-semibold">Management</span>
+                        <span>Feb 17, 2026</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-white mb-3 group-hover:text-indigo-400 transition">5 Ways to Reduce Member Churn with AI</h2>
+                    <p class="text-slate-400 mb-4 line-clamp-3">Discover how predictive analytics can help you identify at-risk members before they cancel their membership.</p>
+                    <a href="#" class="text-indigo-400 font-medium hover:text-indigo-300 inline-flex items-center gap-1">
+                        Read more <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </article>
+
+            <!-- Article 2 -->
+            <article class="bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 hover:border-indigo-500/50 transition group">
+                <div class="h-48 bg-slate-800 flex items-center justify-center">
+                    <span class="text-slate-600 font-medium">Image Placeholder</span>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center gap-3 text-sm text-slate-500 mb-3">
+                        <span class="bg-emerald-500/10 text-emerald-400 px-2.5 py-0.5 rounded-full text-xs font-semibold">Marketing</span>
+                        <span>Feb 10, 2026</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-white mb-3 group-hover:text-indigo-400 transition">The Ultimate Guide to Gym Marketing in 2026</h2>
+                    <p class="text-slate-400 mb-4 line-clamp-3">From social media ads to automated referral programs, here's how to fill your gym with quality leads.</p>
+                    <a href="#" class="text-indigo-400 font-medium hover:text-indigo-300 inline-flex items-center gap-1">
+                        Read more <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </article>
+
+            <!-- Article 3 -->
+            <article class="bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 hover:border-indigo-500/50 transition group">
+                <div class="h-48 bg-slate-800 flex items-center justify-center">
+                    <span class="text-slate-600 font-medium">Image Placeholder</span>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center gap-3 text-sm text-slate-500 mb-3">
+                        <span class="bg-purple-500/10 text-purple-400 px-2.5 py-0.5 rounded-full text-xs font-semibold">Operations</span>
+                        <span>Feb 05, 2026</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-white mb-3 group-hover:text-indigo-400 transition">Streamlining Your Front Desk Operations</h2>
+                    <p class="text-slate-400 mb-4 line-clamp-3">Efficiency starts at the front desk. Learn how to automate check-ins and free up your staff for member engagement.</p>
+                    <a href="#" class="text-indigo-400 font-medium hover:text-indigo-300 inline-flex items-center gap-1">
+                        Read more <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </article>
+        </div>
+
+        <div class="text-center mt-12">
+            <button class="px-6 py-3 border border-slate-700 rounded-lg text-slate-300 hover:bg-slate-800 transition">View All Articles</button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 mt-20 bg-slate-950">
+        <div class="max-w-7xl mx-auto px-6 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <h4 class="text-white font-bold mb-4">Company</h4>
+                    <ul class="space-y-2">
+                        <li><a href="/about/" class="text-slate-400 hover:text-white">About</a></li>
+                        <li><a href="/blog/" class="text-white">Blog</a></li>
+                        <li><a href="/contact/" class="text-slate-400 hover:text-white">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold mb-4">Product</h4>
+                    <ul class="space-y-2">
+                        <li><a href="/#features" class="text-slate-400 hover:text-white">Features</a></li>
+                        <li><a href="/#pricing" class="text-slate-400 hover:text-white">Pricing</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold mb-4">Legal</h4>
+                    <ul class="space-y-2">
+                        <li><a href="/privacy/" class="text-slate-400 hover:text-white">Privacy Policy</a></li>
+                        <li><a href="/terms/" class="text-slate-400 hover:text-white">Terms of Service</a></li>
+                        <li><a href="/refund-policy/" class="text-slate-400 hover:text-white">Refund Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold mb-4">Connect</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-slate-400 hover:text-white">Twitter</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-white">LinkedIn</a></li>
+                        <li><a href="#" class="text-slate-400 hover:text-white">Facebook</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-slate-800 mt-8 pt-8 text-center text-slate-500 text-sm">
+                © 2026 GymEdge. All rights reserved.
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

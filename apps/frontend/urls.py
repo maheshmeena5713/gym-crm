@@ -10,9 +10,13 @@ urlpatterns = [
     # ── Landing Page ──────────────────────────────────────
     path('', views.LandingPageView.as_view(), name='landing'),
 
-    # ── Auth (3-step: Gym Code → Phone → OTP) ────────────
-    path('login/', views.LoginView.as_view(), name='login'),
-    path('auth/validate-gym-code/', views.ValidateGymCodeView.as_view(), name='validate-gym-code'),
+    # ── Auth (3-step: Gym Code → Phone →    # ── Simplified Unified Login (Primary) ──────────────
+    path('login/', views.UnifiedLoginView.as_view(), name='unified-login'),
+
+    # ── Auth (Legacy Multi-Step: OTP Flow) ──────────────
+    path('auth/login/', views.LoginView.as_view(), name='login'),
+    # Renamed view, kept URL for compatibility (or we can change it to validate-entity-code)
+    path('auth/validate-gym-code/', views.ValidateEntityCodeView.as_view(), name='validate-gym-code'),
     path('auth/send-otp/', views.SendOTPView.as_view(), name='send-otp'),
     path('auth/verify-otp/', views.VerifyOTPView.as_view(), name='verify-otp'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
@@ -25,6 +29,9 @@ urlpatterns = [
 
     # ── Password Login ────────────────────────────────────
     path('auth/password-login/', views.PasswordLoginView.as_view(), name='password-login'),
+
+    # ── Enterprise Login (No Gym Code) ────────────────────
+    path('enterprise/login/', views.EnterpriseLoginView.as_view(), name='enterprise-login'),
 
     # ── Dashboard ─────────────────────────────────────────
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
@@ -41,4 +48,12 @@ urlpatterns = [
 
     # ── Settings (Owner Only) ─────────────────────────────
     path('settings/branding/', views.GymSettingsView.as_view(), name='gym-settings'),
+    
+    # ── Informational Pages ───────────────────────────────
+    path('about/', views.AboutView.as_view(), name='about'),
+    path('blog/', views.BlogView.as_view(), name='blog'),
+    path('contact/', views.ContactView.as_view(), name='contact'),
+    path('privacy/', views.PrivacyPolicyView.as_view(), name='privacy'),
+    path('terms/', views.TermsOfServiceView.as_view(), name='terms'),
+    path('refund-policy/', views.RefundPolicyView.as_view(), name='refund-policy'),
 ]

@@ -16,21 +16,27 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h4l3-4h4l3 4h4v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
             </svg>
         </div>
-        <h1 class="text-2xl font-bold text-white">Welcome to GymAI</h1>
+        <h1 class="text-2xl font-bold text-white">Welcome to GymEdge</h1>
         <p class="text-slate-400 mt-1 text-sm">AI-powered gym management</p>
     </div>
 
     <!-- Login Card -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
         <div id="auth-form">
-            {% include "auth/gym_code_form.html" %}
+            {% if entity_name %}
+                {% include "auth/phone_form.html" %}
+            {% else %}
+                {% include "auth/gym_code_form.html" %}
+            {% endif %}
         </div>
     </div>
 
     <!-- Footer -->
-    <p class="text-center text-slate-600 text-xs mt-6">
-        Don't have an account? <a href="/signup/" class="text-indigo-400 hover:text-indigo-300">Start free trial</a>
-    </p>
+    <div class="mt-6 text-center">
+        <div class="text-sm text-slate-400">
+            Don't have an account? <a href="{% url 'frontend:signup' %}" class="font-medium text-brand-400 hover:text-brand-300 transition-colors">Sign up</a>
+        </div>
+    </div>
 </div>
 
 <script>

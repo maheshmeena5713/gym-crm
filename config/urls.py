@@ -1,5 +1,5 @@
 """
-Gym AI SaaS - URL Configuration
+GymEdge - URL Configuration
 """
 
 from django.contrib import admin
@@ -14,8 +14,8 @@ from drf_spectacular.views import (
 )
 
 # Admin site customization
-admin.site.site_header = "Gym AI SaaS Admin"
-admin.site.site_title = "Gym AI SaaS"
+admin.site.site_header = "GymEdge Admin"
+admin.site.site_title = "GymEdge"
 admin.site.index_title = "Dashboard"
 
 # API v1 routes

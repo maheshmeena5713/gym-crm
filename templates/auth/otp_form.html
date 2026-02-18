@@ -6,15 +6,20 @@
 </div>
 {% endif %}
 
-<div class="flex items-center gap-2 mb-5 text-sm text-slate-400">
+<div class="flex items-center justify-between gap-2 mb-5 text-sm">
     <button type="button"
             hx-post="{% url 'frontend:validate-gym-code' %}"
             hx-target="#auth-form" hx-swap="innerHTML"
             hx-vals='{"gym_code": "{{ gym_code }}"}'
-            class="hover:text-white transition-colors">
-        ←
+            class="text-slate-400 hover:text-white transition-colors flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Back
     </button>
-    OTP sent to <span class="text-white font-medium">+91 {{ phone }}</span>
+    <div class="text-slate-400">
+        OTP sent to <span class="text-white font-medium">+91 {{ phone }}</span> 📱
+    </div>
 </div>
 
 <form hx-post="{% url 'frontend:verify-otp' %}"

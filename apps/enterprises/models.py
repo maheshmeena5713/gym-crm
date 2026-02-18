@@ -36,6 +36,14 @@ class HoldingCompany(BaseModel):
         max_length=20,
         verbose_name="Contact Phone"
     )
+    holding_code = models.CharField(
+        max_length=10,
+        unique=True,
+        editable=False,
+        null=True,  # Null for migration, will populate later
+        verbose_name="Holding Code",
+        help_text="Unique identifier for login (e.g. HOLD4829)."
+    )
     is_active = models.BooleanField(
         default=True,
         verbose_name="Is Active"
@@ -48,9 +56,26 @@ class HoldingCompany(BaseModel):
         db_table = 'enterprises_holdingcompany'
         verbose_name = 'Holding Company'
         verbose_name_plural = 'Holding Companies'
+        indexes = [
+            models.Index(fields=['holding_code'], name='idx_holding_code'),
+        ]
 
     def __str__(self):
         return self.name
+
+    @staticmethod
+    def _generate_holding_code():
+        """Generate unique code like HOLD482915."""
+        import random, string
+        while True:
+            code = 'HOLD' + ''.join(random.choices(string.digits, k=6))
+            if not HoldingCompany.objects.filter(holding_code=code).exists():
+                return code
+
+    def save(self, *args, **kwargs):
+        if not self.holding_code:
+            self.holding_code = self._generate_holding_code()
+        super().save(*args, **kwargs)
 
 
 class Brand(BaseModel):
@@ -110,6 +135,7 @@ class Brand(BaseModel):
         verbose_name_plural = 'Brands'
         indexes = [
             models.Index(fields=['holding_company', 'name'], name='idx_brand_holding_name'),
+            models.Index(fields=['brand_code'], name='idx_brand_code'),
         ]
 
     def __str__(self):
@@ -123,14 +149,34 @@ class Organization(BaseModel):
     """
     brand = models.ForeignKey(
         Brand,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='organizations',
-        verbose_name="Brand"
+        verbose_name="Brand",
+        help_text="Optional: Brand if part of enterprise/franchise structure"
     )
     name = models.CharField(
         max_length=255,
         verbose_name="Organization Name",
         help_text="Legal name of the franchise/owner entity"
+    )
+    org_code = models.CharField(
+        max_length=10,
+        unique=True,
+        editable=False,
+        null=True,  # Null for migration
+        verbose_name="Organization Code",
+        help_text="Unique identifier for login (e.g. ORG4829)."
+    )
+    entity_code = models.CharField(
+        max_length=10,
+        unique=True,
+        editable=False,
+        null=True,  # Null for migration, will be populated
+        db_index=True,
+        verbose_name="Entity Code",
+        help_text="Unified login identifier (e.g. GYM7654321). Used for all user logins."
     )
     owner_name = models.CharField(
         max_length=255,
@@ -183,10 +229,39 @@ class Organization(BaseModel):
         indexes = [
             models.Index(fields=['brand', 'owner_email'], name='idx_org_brand_email'),
             models.Index(fields=['owner_phone'], name='idx_org_owner_phone'),
+            models.Index(fields=['org_code'], name='idx_org_code'),
+            models.Index(fields=['entity_code'], name='idx_entity_code'),
         ]
 
     def __str__(self):
-        return f"{self.name} ({self.brand.name})"
+        if self.brand:
+            return f"{self.name} ({self.brand.name})"
+        return self.name
+
+    @staticmethod
+    def _generate_org_code():
+        """Generate unique code like ORG482915."""
+        import random, string
+        while True:
+            code = 'ORG' + ''.join(random.choices(string.digits, k=6))
+            if not Organization.objects.filter(org_code=code).exists():
+                return code
+
+    @staticmethod
+    def _generate_entity_code():
+        """Generate unique entity code like GYM7654321."""
+        import random, string
+        while True:
+            code = 'GYM' + ''.join(random.choices(string.digits, k=7))
+            if not Organization.objects.filter(entity_code=code).exists():
+                return code
+
+    def save(self, *args, **kwargs):
+        if not self.org_code:
+            self.org_code = self._generate_org_code()
+        if not self.entity_code:
+            self.entity_code = self._generate_entity_code()
+        super().save(*args, **kwargs)
 
 
 class RoyaltyLedger(BaseModel):

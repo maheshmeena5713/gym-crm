@@ -154,3 +154,54 @@ class Quote(BaseModel):
 
     def __str__(self):
         return f"{self.content[:50]}..."
+
+
+class ContactQuery(BaseModel):
+    """
+    Contact form submissions from the website.
+    Allows potential customers to reach out with questions.
+    """
+    # Contact information
+    name = models.CharField(max_length=200, verbose_name="Full Name")
+    email = models.EmailField(verbose_name="Email Address")
+    phone = models.CharField(max_length=20, blank=True, verbose_name="Phone Number")
+    company = models.CharField(max_length=200, blank=True, verbose_name="Company Name")
+    
+    # Message details
+    subject = models.CharField(max_length=300, verbose_name="Subject")
+    message = models.TextField(verbose_name="Message")
+    
+    # Status tracking
+    class Status(models.TextChoices):
+        NEW = 'new', 'New'
+        IN_PROGRESS = 'in_progress', 'In Progress'
+        RESOLVED = 'resolved', 'Resolved'
+        CLOSED = 'closed', 'Closed'
+    
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.NEW,
+        verbose_name="Status"
+    )
+    
+    # Metadata
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="IP Address")
+    user_agent = models.TextField(blank=True, verbose_name="User Agent")
+    
+    objects = models.Manager()
+    active_objects = ActiveManager()
+
+    class Meta:
+        db_table = 'contact_queries'
+        verbose_name = 'Contact Query'
+        verbose_name_plural = 'Contact Queries'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at'], name='idx_contact_created'),
+            models.Index(fields=['status'], name='idx_contact_status'),
+            models.Index(fields=['email'], name='idx_contact_email'),
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.subject}"
