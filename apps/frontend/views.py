@@ -20,6 +20,7 @@ from django.views import View
 from apps.gyms.models import Gym
 from apps.enterprises.models import HoldingCompany, Brand, Organization
 from apps.members.models import Member, MembershipPlan
+from apps.billing.models import SubscriptionPlan
 from apps.users.models import GymUser
 from apps.users.services import OTPService
 from apps.members.services import BulkImportService, AIScanService
@@ -50,7 +51,9 @@ class LandingPageView(View):
     def get(self, request):
         if request.user.is_authenticated:
             return redirect('frontend:dashboard')
-        return render(request, 'landing_redesigned.html')
+        
+        plans = SubscriptionPlan.active_objects.all().order_by('display_order', 'price_monthly')
+        return render(request, 'landing_redesigned.html', {'plans': plans})
 
 
 # ── Auth Views ────────────────────────────────────────────────
@@ -334,13 +337,23 @@ class SignupView(View):
     def get(self, request):
         if request.user.is_authenticated:
             return redirect('frontend:dashboard')
-        return render(request, 'auth/signup.html')
+        
+        # Capture pre-selected plan from URL
+        selected_plan = request.GET.get('plan', '')
+        plans = SubscriptionPlan.active_objects.all().order_by('display_order', 'price_monthly')
+        
+        context = {
+            'selected_plan': selected_plan,
+            'plans': plans,
+        }
+        return render(request, 'auth/signup.html', context)
 
 
 class SignupSendOTPView(View):
     """Validate gym details from Step 1 + phone from Step 2, send OTP."""
     def post(self, request):
         # Collect all fields
+        plan_slug = request.POST.get('plan_slug', '').strip()
         gym_name = request.POST.get('gym_name', '').strip()
         owner_name = request.POST.get('owner_name', '').strip()
         email = request.POST.get('email', '').strip()
@@ -362,6 +375,7 @@ class SignupSendOTPView(View):
             errors['phone'] = 'Enter a valid 10-digit phone number.'
 
         # Username validation
+        print(f"DEBUG Username: '{username}'")
         if not username:
             errors['username'] = 'Username is required.'
         elif len(username) < 4:
@@ -384,6 +398,7 @@ class SignupSendOTPView(View):
 
         # Store signup data in session
         request.session['signup_data'] = {
+            'plan_slug': plan_slug,
             'gym_name': gym_name,
             'owner_name': owner_name,
             'email': email,
@@ -420,9 +435,11 @@ class SignupVerifyOTPView(View):
         if not success:
             return JsonResponse({'success': False, 'error': result}, status=400)
 
-        # Get the Starter plan
-        from apps.billing.models import SubscriptionPlan
-        starter_plan = SubscriptionPlan.objects.filter(slug='starter').first()
+        # Get the selected plan, fallback to starter if missing
+        plan_slug = signup_data.get('plan_slug')
+        plan = SubscriptionPlan.objects.filter(slug=plan_slug).first()
+        if not plan:
+            plan = SubscriptionPlan.objects.filter(slug='starter').first()
 
         # Create the Gym
         gym = Gym.objects.create(
@@ -431,9 +448,9 @@ class SignupVerifyOTPView(View):
             owner_phone=phone,
             email=signup_data['email'],
             city=signup_data.get('city', ''),
-            subscription_plan=starter_plan,
+            subscription_plan=plan,
             subscription_status='trial',
-            trial_ends_at=timezone.now() + timedelta(days=14),
+            trial_ends_at=timezone.now() + timedelta(days=30),
             is_active=True,
         )
 

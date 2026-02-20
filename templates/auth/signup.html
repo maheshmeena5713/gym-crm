@@ -13,17 +13,42 @@
     <!-- Progress Steps -->
     <div class="flex items-center justify-center gap-3 mb-8">
         <div id="dot-1" class="step-dot active w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all"></div>
-        <div class="w-10 h-0.5 bg-slate-700/50"></div>
+        <div class="w-8 h-0.5 bg-slate-700/50"></div>
         <div id="dot-2" class="step-dot w-3 h-3 rounded-full bg-slate-800 transition-all"></div>
-        <div class="w-10 h-0.5 bg-slate-700/50"></div>
+        <div class="w-8 h-0.5 bg-slate-700/50"></div>
         <div id="dot-3" class="step-dot w-3 h-3 rounded-full bg-slate-800 transition-all"></div>
+        <div class="w-8 h-0.5 bg-slate-700/50"></div>
+        <div id="dot-4" class="step-dot w-3 h-3 rounded-full bg-slate-800 transition-all"></div>
     </div>
 
     <!-- Signup Card -->
     <div class="bg-slate-900/50 border border-slate-800 backdrop-blur-xl rounded-3xl p-8 shadow-2xl shadow-indigo-500/5 relative">
         
-        <!-- Step 1: Gym Details -->
+        <!-- Step 1: Choose Plan -->
         <div id="step-1" class="space-y-4">
+            <h2 class="text-lg font-semibold text-white mb-4">Choose Your Plan</h2>
+            <div class="space-y-3">
+                {% for plan in plans %}
+                <label class="relative block cursor-pointer group">
+                    <input type="radio" name="plan_slug" value="{{ plan.slug }}" class="peer sr-only" {% if selected_plan == plan.slug %}checked{% endif %}>
+                    <div class="p-4 rounded-xl border border-slate-700 bg-slate-800/30 peer-checked:border-indigo-500 peer-checked:bg-indigo-500/10 hover:border-slate-500 transition-all">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-white">{{ plan.name }}</span>
+                            <span class="text-indigo-400 font-semibold">₹{{ plan.price_monthly|floatformat:0 }}/mo</span>
+                        </div>
+                        <p class="text-sm text-slate-400">Up to {{ plan.max_members }} members.</p>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+            <button onclick="goToStep2()" 
+                    class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/20 mt-4">
+                Continue <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- Step 2: Gym Details -->
+        <div id="step-2" class="space-y-4 hidden">
             <h2 class="text-lg font-semibold text-white mb-4">Gym Details</h2>
             
             <div class="grid grid-cols-2 gap-4">
@@ -34,18 +59,32 @@
                            class="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
                 </div>
                 
-                <div class="col-span-2 md:col-span-1">
-                    <label class="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wide">Your Name</label>
-                    <input type="text" id="owner_name" placeholder="Name"
-                           oninput="suggestUsername()"
-                           class="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
-                </div>
-                
-                <div class="col-span-2 md:col-span-1">
+                <div class="col-span-2">
                     <label class="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wide">City</label>
                     <input type="text" id="city" placeholder="City"
                            class="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
                 </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="goBack(1)" class="px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition-all">
+                    Back
+                </button>
+                <button onclick="goToStep3()" 
+                        class="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/20">
+                    Continue <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Step 3: Owner Details -->
+        <div id="step-3" class="space-y-4 hidden">
+            <h2 class="text-lg font-semibold text-white mb-4">Owner Profile</h2>
+            
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wide">Owner Name</label>
+                <input type="text" id="owner_name" placeholder="Name"
+                       oninput="suggestUsername()"
+                       class="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all">
             </div>
 
             <div>
@@ -79,14 +118,19 @@
                 </div>
             </div>
 
-            <button onclick="goToStep2()" 
-                    class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/20 mt-4">
-                Continue <i data-lucide="arrow-right" class="w-4 h-4"></i>
-            </button>
+            <div class="flex gap-3">
+                <button onclick="goBack(2)" class="px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition-all">
+                    Back
+                </button>
+                <button onclick="goToStep4()" 
+                        class="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/20">
+                    Continue <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </div>
         </div>
 
-        <!-- Step 2: Phone Number -->
-        <div id="step-2" class="space-y-6 hidden">
+        <!-- Step 4: Phone & OTP -->
+        <div id="step-4" class="space-y-6 hidden">
             <h2 class="text-lg font-semibold text-white mb-2">Verify Phone</h2>
             <p class="text-sm text-slate-400 -mt-4 mb-6">We'll send an OTP to verify your account.</p>
 
@@ -107,11 +151,11 @@
                 <i data-lucide="send" class="w-4 h-4"></i>
             </button>
 
-            <button onclick="goBack(1)" class="w-full text-slate-500 hover:text-white text-sm py-2">Back to details</button>
+            <button onclick="goBack(3)" class="w-full text-slate-500 hover:text-white text-sm py-2">Back to profile</button>
         </div>
 
-        <!-- Step 3: OTP -->
-        <div id="step-3" class="space-y-6 hidden">
+        <!-- Step 5: Verify OTP -->
+        <div id="step-5" class="space-y-6 hidden">
             <h2 class="text-lg font-semibold text-white mb-2">Enter OTP</h2>
             <p class="text-sm text-slate-400 -mt-4">Sent to <span id="show-phone" class="text-white"></span></p>
             
@@ -129,7 +173,7 @@
                 <i data-lucide="check-circle" class="w-4 h-4"></i>
             </button>
             
-            <button onclick="goBack(2)" class="w-full text-slate-500 hover:text-white text-sm py-2">Change phone number</button>
+            <button onclick="goBack(4)" class="w-full text-slate-500 hover:text-white text-sm py-2">Change phone number</button>
         </div>
     </div>
 
@@ -151,6 +195,11 @@
 
     // Init Lucide
     lucide.createIcons();
+    
+    // Auto-show step 1 on load
+    document.addEventListener("DOMContentLoaded", () => {
+        showStep(1);
+    });
 
     let usernameTimer = null;
     let usernameAvailable = null;
@@ -238,28 +287,55 @@
     }
 
     function showStep(n) {
-        [1, 2, 3].forEach(i => {
-            document.getElementById('step-' + i).classList.toggle('hidden', i !== n);
-            const dot = document.getElementById('dot-' + i);
-            dot.className = n >= i ? 'step-dot active w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all' : 'step-dot w-3 h-3 rounded-full bg-slate-800 transition-all';
-            if (n > i) dot.className = 'step-dot w-3 h-3 rounded-full bg-emerald-500 transition-all'; 
+        // We have 5 logical steps, but dot progress is 4 dots max (Step 5 uses dot 4).
+        [1, 2, 3, 4, 5].forEach(i => {
+            const stepDiv = document.getElementById('step-' + i);
+            if (stepDiv) stepDiv.classList.toggle('hidden', i !== n);
+            
+            const dotIdx = i === 5 ? 4 : i; // map step 5 -> dot 4
+            const dot = document.getElementById('dot-' + dotIdx);
+            if (!dot) return;
+            
+            if (n === dotIdx || (n === 5 && dotIdx === 4)) {
+                 dot.className = 'step-dot active w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all';
+            } else if (n > dotIdx) {
+                 dot.className = 'step-dot w-3 h-3 rounded-full bg-emerald-500 transition-all'; 
+            } else {
+                 dot.className = 'step-dot w-3 h-3 rounded-full bg-slate-800 transition-all';
+            }
         });
     }
 
     function goToStep2() {
+        const selectedPlan = document.querySelector('input[name="plan_slug"]:checked');
+        if (!selectedPlan) {
+             alert("Please select a plan to continue.");
+             return;
+        }
+        showStep(2);
+    }
+
+    function goToStep3() {
         const gymName = document.getElementById('gym_name').value.trim();
+        const city = document.getElementById('city').value.trim();
+        if (!gymName) {
+            alert("Gym Name is required");
+            return;
+        }
+        showStep(3);
+    }
+
+    function goToStep4() {
         const ownerName = document.getElementById('owner_name').value.trim();
         const email = document.getElementById('email').value.trim();
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('signup_password').value;
 
-        if (!gymName || !ownerName || !email || !username || !password) {
+        if (!ownerName || !email || !username || !password) {
             alert("Please fill all fields");
             return;
         }
-
-        document.getElementById('show-phone').textContent = '';
-        showStep(2);
+        showStep(4);
     }
 
     function goBack(n) {
@@ -275,6 +351,8 @@
         btn.innerHTML = 'Sending...';
 
         const formData = new FormData();
+        const selectedPlan = document.querySelector('input[name="plan_slug"]:checked').value;
+        formData.append('plan_slug', selectedPlan);
         formData.append('gym_name', document.getElementById('gym_name').value.trim());
         formData.append('owner_name', document.getElementById('owner_name').value.trim());
         formData.append('email', document.getElementById('email').value.trim());
@@ -292,7 +370,7 @@
             const data = await res.json();
             if (data.success) {
                 document.getElementById('show-phone').textContent = '+91 ' + phone;
-                showStep(3);
+                showStep(5);
             } else {
                 document.getElementById('otp-error').textContent = JSON.stringify(data.errors);
                 document.getElementById('otp-error').classList.remove('hidden');

@@ -152,7 +152,7 @@ class OTPService:
             }
 
         # Single user found
-        user = users.first()
+        user = users[0] if isinstance(users, list) else users.first()
         
         # Update last login
         user.last_login = timezone.now()

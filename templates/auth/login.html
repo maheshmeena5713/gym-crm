@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Login{% endblock %}
 
 {% block auth_content %}
@@ -11,11 +12,7 @@
             </svg>
             Back to Home
         </a>
-        <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mb-4 shadow-lg shadow-brand-500/25">
-            <svg class="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h4l3-4h4l3 4h4v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
-            </svg>
-        </div>
+        <img src="{% static 'images/gymedgelogo.png' %}" alt="GymEdge Logo" class="h-20 mx-auto mb-4 object-contain filter drop-shadow-[0_0_12px_rgba(239,68,68,0.4)]">
         <h1 class="text-2xl font-bold text-white">Welcome to GymEdge</h1>
         <p class="text-slate-400 mt-1 text-sm">AI-powered gym management</p>
     </div>

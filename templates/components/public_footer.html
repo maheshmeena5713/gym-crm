@@ -1,10 +1,10 @@
+{% load static %}
 <footer class="bg-slate-950 border-t border-slate-900 pt-20 pb-10">
     <div class="max-w-7xl mx-auto px-6">
         <div class="grid md:grid-cols-4 gap-12 mb-16">
             <div class="col-span-1 md:col-span-1">
                 <a href="/" class="flex items-center gap-2 mb-6">
-                    <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-cyan-400 rounded-lg flex items-center justify-center text-white font-bold shadow-lg">G</div>
-                    <span class="text-xl font-bold text-white">GymEdge</span>
+                    <img src="{% static 'images/gymedgelogo.png' %}" alt="GymEdge Logo" class="h-16 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(239,68,68,0.3)] hover:drop-shadow-[0_0_12px_rgba(239,68,68,0.5)] transition-all duration-300">
                 </a>
                 <p class="text-slate-500 text-sm leading-relaxed">
                     The AI-powered operating system for modern fitness businesses. Analyze, automate, and grow.
