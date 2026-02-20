@@ -90,11 +90,11 @@ class GymUser(AbstractBaseUser, PermissionsMixin):
         verbose_name="Email",
     )
     username = models.CharField(
-        max_length=30,
+        max_length=255,
         unique=True,  # Changed to True for USERNAME_FIELD
         db_index=True,
         verbose_name="Username",
-        help_text="Login username (lowercase, 4-30 chars, alphanumeric + underscores)",
+        help_text="Login username (lowercase, 4-255 chars, alphanumeric + underscores)",
         error_messages={
             'unique': "A user with that username already exists.",
         },
