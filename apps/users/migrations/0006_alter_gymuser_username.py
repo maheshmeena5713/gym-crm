@@ -4,12 +4,24 @@ import django.utils.timezone
 from django.db import migrations, models
 
 
+def truncate_usernames(apps, schema_editor):
+    GymUser = apps.get_model('users', 'GymUser')
+    import uuid
+    for user in GymUser.objects.all():
+        if user.username and len(user.username) > 30:
+            base = user.username[:20]
+            suffix = str(uuid.uuid4()).replace('-', '')[:9]
+            user.username = f"{base}_{suffix}"
+            user.save(update_fields=['username'])
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("users", "0005_gymuser_brand_gymuser_holding_company_and_more"),
     ]
 
     operations = [
+        migrations.RunPython(truncate_usernames, reverse_code=migrations.RunPython.noop),
         migrations.AlterField(
             model_name="gymuser",
             name="username",
