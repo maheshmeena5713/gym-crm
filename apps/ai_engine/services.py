@@ -142,6 +142,8 @@ class WorkoutPlanService:
             data = response.json()
             content = data['choices'][0]['message']['content']
             parsed = json.loads(content)
+            if isinstance(parsed, list) and len(parsed) > 0:
+                parsed = parsed[0]
             return True, parsed
             
         except Exception as e:
@@ -165,6 +167,8 @@ class WorkoutPlanService:
             )
             
             parsed = json.loads(response.text)
+            if isinstance(parsed, list) and len(parsed) > 0:
+                parsed = parsed[0]
             return True, parsed
             
         except Exception as e:
