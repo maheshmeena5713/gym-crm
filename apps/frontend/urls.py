@@ -56,4 +56,10 @@ urlpatterns = [
     path('privacy/', views.PrivacyPolicyView.as_view(), name='privacy'),
     path('terms/', views.TermsOfServiceView.as_view(), name='terms'),
     path('refund-policy/', views.RefundPolicyView.as_view(), name='refund-policy'),
+    
+    # ── WhatsApp Integration ──────────────────────────────
+    path('whatsapp/', views.WhatsAppDashboardView.as_view(), name='whatsapp-dashboard'),
+    path('whatsapp/broadcast/', views.WhatsAppBroadcastView.as_view(), name='whatsapp-broadcast'),
+    path('whatsapp/templates/', views.WhatsAppTemplatesView.as_view(), name='whatsapp-templates'),
+    path('whatsapp/logs/', views.WhatsAppLogsView.as_view(), name='whatsapp-logs'),
 ]

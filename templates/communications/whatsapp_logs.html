@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}WhatsApp Message Logs | {{ request.user.gym.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-white">WhatsApp Message Logs</h2>
+    <p class="text-slate-400 text-sm mt-1">History of all automated and manual messages sent from your gym.</p>
+</div>
+
+<!-- Tabs -->
+<div class="border-b border-slate-800 mb-6">
+    <nav class="-mb-px flex space-x-8">
+        <a href="{% url 'frontend:whatsapp-dashboard' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-300 hover:border-slate-700">
+            Dashboard
+        </a>
+        <a href="{% url 'frontend:whatsapp-broadcast' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-300 hover:border-slate-700">
+            Broadcast
+        </a>
+        <a href="{% url 'frontend:whatsapp-templates' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-300 hover:border-slate-700">
+            Templates & Rules
+        </a>
+        <a href="{% url 'frontend:whatsapp-logs' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-brand-500 font-medium text-sm text-brand-400">
+            Message Logs
+        </a>
+    </nav>
+</div>
+
+<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                <tr>
+                    <th class="px-6 py-4 text-left font-medium">Date & Time</th>
+                    <th class="px-6 py-4 text-left font-medium">Recipient</th>
+                    <th class="px-6 py-4 text-left font-medium">Phone</th>
+                    <th class="px-6 py-4 text-left font-medium">Message Preview</th>
+                    <th class="px-6 py-4 text-left font-medium">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+                {% for message in messages %}
+                <tr class="hover:bg-slate-800/30 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                        {{ message.created_at|date:"Y-m-d H:i" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {% if message.member %}
+                            <a href="{% url 'frontend:member-detail' message.member.pk %}" class="text-brand-400 hover:text-brand-300 transition-colors">
+                                {{ message.member.name }}
+                            </a>
+                        {% else %}
+                            <span class="text-slate-500">Unknown User</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300 font-mono">
+                        {{ message.phone }}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-400 max-w-xs truncate" title="{{ message.message }}">
+                        {{ message.message }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        {% if message.status == 'sent' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Sent
+                            </span>
+                        {% elif message.status == 'failed' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                Failed
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                Pending
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                        <svg class="mx-auto h-12 w-12 text-slate-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        <p class="text-sm">No messages have been sent yet.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="px-6 py-4 border-t border-slate-800 flex items-center justify-between">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-slate-700 text-sm font-medium rounded-md text-slate-300 bg-slate-800 hover:bg-slate-700">
+                Previous
+            </a>
+            {% endif %}
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-700 text-sm font-medium rounded-md text-slate-300 bg-slate-800 hover:bg-slate-700">
+                Next
+            </a>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-slate-400">
+                    Showing page <span class="font-medium text-white">{{ page_obj.number }}</span> of <span class="font-medium text-white">{{ page_obj.paginator.num_pages }}</span>
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-700 bg-slate-800 text-sm font-medium text-slate-400 hover:bg-slate-700">
+                        <span class="sr-only">Previous</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    {% endif %}
+                    
+                    <span class="relative inline-flex items-center px-4 py-2 border border-slate-700 bg-slate-800 text-sm font-medium text-white">
+                        {{ page_obj.number }}
+                    </span>
+
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-700 bg-slate-800 text-sm font-medium text-slate-400 hover:bg-slate-700">
+                        <span class="sr-only">Next</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

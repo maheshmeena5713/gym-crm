@@ -211,3 +211,69 @@ class WhatsAppService:
             member=member,
             message_type=WhatsAppMessage.MessageType.PROMOTION
         )
+
+    def send_whatsapp_message(self, phone, message, gym=None, member=None):
+        """
+        Sends a raw WhatsApp message (no template constraints) or handles
+        custom Meta API text messaging. Logs the result in WhatsAppMessageLog.
+        This provides a swappable interface (e.g. Meta API, Twilio). 
+        """
+        formatted_phone = self._format_phone(phone)
+        
+        # We need the WhatsAppMessageLog model
+        from apps.communications.models import WhatsAppMessageLog
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": formatted_phone,
+            "type": "text",
+            "text": {
+                "body": message
+            }
+        }
+
+        if self.simulation_mode:
+            logger.info(f"SIMULATION: Sending Raw WA to {formatted_phone}: {message[:30]}...")
+            msg_log = WhatsAppMessageLog.objects.create(
+                gym=gym,
+                member=member,
+                phone=formatted_phone,
+                message=message,
+                status=WhatsAppMessageLog.DeliveryStatus.SENT,
+                response='{"simulation": true, "status": "success"}'
+            )
+            return {"status": "success", "message_id": f"sim_{msg_log.id}"}
+        
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json"
+        }
+        url = f"{self.api_url}/{self.phone_number_id}/messages"
+
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            
+            WhatsAppMessageLog.objects.create(
+                gym=gym,
+                member=member,
+                phone=formatted_phone,
+                message=message,
+                status=WhatsAppMessageLog.DeliveryStatus.SENT,
+                response=response.text
+            )
+            return {"status": "success", "data": data}
+
+        except requests.exceptions.RequestException as e:
+            error_response = e.response.text if e.response else str(e)
+            logger.error(f"WhatsApp Raw Error: {error_response}")
+            WhatsAppMessageLog.objects.create(
+                gym=gym,
+                member=member,
+                phone=formatted_phone,
+                message=message,
+                status=WhatsAppMessageLog.DeliveryStatus.FAILED,
+                response=error_response
+            )
+            return {"status": "failed", "error": str(e)}

@@ -16,6 +16,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
+from django.views.generic import ListView
+from apps.communications.models import WhatsAppMessage
 
 from apps.gyms.models import Gym
 from apps.enterprises.models import HoldingCompany, Brand, Organization
@@ -1289,3 +1291,224 @@ class RefundPolicyView(View):
     """Refund Policy page."""
     def get(self, request):
         return render(request, 'pages/refund_policy.html')
+
+# ── WhatsApp Integration ──────────────────────────────────────
+
+class WhatsAppBaseView(LoginRequiredMixin, View):
+    """
+    Base view for WhatsApp integration pages, handles common checks like login and subscription plan.
+    """
+    login_url = '/login/'
+
+    def dispatch(self, request, *args, **kwargs):
+        # Allow checking for a Pro plan upgrade
+        gym = request.user.gym
+        if not gym:
+            return redirect('frontend:dashboard')
+        
+        # Checking if plan is 'pro' or 'enterprise' or has integration enabled
+        if hasattr(gym, 'subscription_plan') and gym.subscription_plan:
+            if not gym.subscription_plan.has_whatsapp_integration:
+                # Alternatively redirect to an upgrade page
+                return redirect('frontend:business-health')
+        else:
+            return redirect('frontend:business-health')
+        
+        return super().dispatch(request, *args, **kwargs)
+
+
+class WhatsAppDashboardView(WhatsAppBaseView, View):
+    """
+    Main dashboard for WhatsApp Automation.
+    Shows general stats, recent runs, and options to manually broadcast.
+    """
+    def get(self, request):
+        gym = request.user.gym
+        from apps.communications.models import WhatsAppAutomation, WhatsAppMessageLog
+        from django.db.models import Sum
+        from django.utils import timezone
+
+        today = timezone.now().date()
+        
+        # Load automations
+        automations = WhatsAppAutomation.objects.filter(gym=gym)
+        
+        # Stats
+        messages_today = WhatsAppMessageLog.objects.filter(
+            gym=gym, 
+            created_at__date=today
+        )
+        total_sent_today = messages_today.filter(status=WhatsAppMessageLog.DeliveryStatus.SENT).count()
+        failed_count_today = messages_today.filter(status=WhatsAppMessageLog.DeliveryStatus.FAILED).count()
+        latest_run = automations.order_by('-last_run_at').first()
+        last_run_timestamp = latest_run.last_run_at if latest_run else None
+
+        context = {
+            'automations': automations,
+            'total_sent_today': total_sent_today,
+            'failed_count_today': failed_count_today,
+            'last_run_timestamp': last_run_timestamp,
+        }
+        return render(request, 'communications/whatsapp_dashboard.html', context)
+
+
+class WhatsAppTemplatesView(WhatsAppBaseView, View):
+    """
+    Manage the active automation templates.
+    """
+    def get(self, request):
+        gym = request.user.gym
+        from apps.communications.models import WhatsAppAutomation
+        
+        # Ensure default templates exist
+        for auto_type, name in WhatsAppAutomation.AutomationType.choices:
+            WhatsAppAutomation.objects.get_or_create(
+                gym=gym,
+                type=auto_type,
+                defaults={
+                    'enabled': False,
+                    'template': f"Hi {{{{name}}}}, this is a {name} message from {{{{gym_name}}}}.",
+                    'days_before': 3 if auto_type == 'expiry_reminder' else 0
+                }
+            )
+            
+        automations = WhatsAppAutomation.objects.filter(gym=gym)
+        return render(request, 'communications/whatsapp_templates.html', {'automations': automations})
+
+    def post(self, request):
+        gym = request.user.gym
+        from apps.communications.models import WhatsAppAutomation
+        
+        auto_id = request.POST.get('automation_id')
+        enabled = request.POST.get('enabled') == 'on'
+        days_before = request.POST.get('days_before')
+        template = request.POST.get('template')
+
+        if auto_id:
+            try:
+                automation = WhatsAppAutomation.objects.get(id=auto_id, gym=gym)
+                automation.enabled = enabled
+                if days_before is not None and days_before.strip():
+                     automation.days_before = int(days_before)
+                if template:
+                     automation.template = template
+                automation.save()
+            except WhatsAppAutomation.DoesNotExist:
+                pass
+        
+        return redirect('frontend:whatsapp-templates')
+
+
+class WhatsAppLogsView(WhatsAppBaseView, ListView):
+    """
+    Shows a table of recent WhatsApp messages sent.
+    """
+    template_name = 'communications/whatsapp_logs.html'
+    context_object_name = 'messages'
+    paginate_by = 50
+    
+    def get_queryset(self):
+        gym = self.request.user.gym
+        from apps.communications.models import WhatsAppMessageLog
+        return WhatsAppMessageLog.objects.filter(gym=gym).select_related('member').order_by('-created_at')
+
+class WhatsAppBroadcastView(WhatsAppBaseView, View):
+    """
+    Send manual broadcast messages to targeted groups or individuals.
+    """
+    def get(self, request):
+        gym = request.user.gym
+        from apps.members.models import MembershipPlan, Member
+        from apps.leads.models import Lead
+
+        plans = MembershipPlan.active_objects.filter(gym=gym)
+        goals = Member.Goal.choices
+        
+        # Load active members for the specific member dropdown
+        members = Member.active_objects.filter(gym=gym, status=Member.Status.ACTIVE).order_by('name')
+
+        context = {
+            'plans': plans,
+            'goals': goals,
+            'members': members,
+        }
+        return render(request, 'communications/whatsapp_broadcast.html', context)
+
+    def post(self, request):
+        gym = request.user.gym
+        from apps.members.models import Member, MembershipPlan
+        from apps.leads.models import Lead
+        from apps.communications.services import WhatsAppService
+        from django.contrib import messages
+
+        audience = request.POST.get('audience')
+        message_text = request.POST.get('message')
+        
+        if not audience or not message_text:
+            messages.error(request, "Please select an audience and write a message.")
+            return redirect('frontend:whatsapp-broadcast')
+
+        recipients = {} # Dict to deduplicate: {phone: {'phone': str, 'name': str, 'member_obj': Member|None}}
+
+        def add_recipients(queryset, is_lead=False):
+            for obj in queryset:
+                if obj.phone:
+                    # Dedup by raw phone string
+                    clean_phone = obj.phone.strip()
+                    if clean_phone not in recipients:
+                        recipients[clean_phone] = {
+                            'phone': clean_phone,
+                            'name': obj.name,
+                            'member_obj': None if is_lead else obj
+                        }
+
+        if audience == 'active_members':
+            add_recipients(Member.objects.filter(gym=gym, status=Member.Status.ACTIVE))
+        
+        elif audience == 'expired_members':
+            add_recipients(Member.objects.filter(gym=gym, status=Member.Status.EXPIRED))
+        
+        elif audience == 'goal_group':
+            goal = request.POST.get('goal')
+            if goal:
+                add_recipients(Member.objects.filter(gym=gym, goal=goal))
+        
+        elif audience == 'specific_plan':
+            plan_id = request.POST.get('plan_id')
+            if plan_id:
+                add_recipients(Member.objects.filter(gym=gym, membership_plan_id=plan_id))
+        
+        elif audience == 'leads_only':
+            add_recipients(Lead.objects.filter(gym=gym), is_lead=True)
+        
+        elif audience == 'specific_member':
+            member_id = request.POST.get('member_id')
+            if member_id:
+                add_recipients(Member.objects.filter(gym=gym, id=member_id))
+        
+        final_recipients = list(recipients.values())
+        
+        if not final_recipients:
+            messages.warning(request, "No users found with valid phone numbers for the selected criteria.")
+            return redirect('frontend:whatsapp-broadcast')
+            
+        wa_service = WhatsAppService()
+        success_count = 0
+        
+        for r in final_recipients:
+            # Simple personalization
+            personalized_msg = message_text.replace('{{name}}', r['name'])
+            
+            # Send message using the service
+            result = wa_service.send_whatsapp_message(
+                phone=r['phone'],
+                message=personalized_msg,
+                gym=gym,
+                member=r['member_obj']
+            )
+            
+            if result and result.get('status') == 'sent':
+                success_count += 1
+                
+        messages.success(request, f"Successfully sent broadcast to {success_count} recipients (attempted {len(final_recipients)}).")
+        return redirect('frontend:whatsapp-logs')

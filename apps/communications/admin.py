@@ -92,3 +92,19 @@ class ContactQueryAdmin(admin.ModelAdmin):
         updated = queryset.update(status='closed')
         self.message_user(request, f'{updated} queries marked as closed.')
     mark_as_closed.short_description = "Mark as closed"
+
+from apps.communications.models import WhatsAppAutomation, WhatsAppMessageLog
+
+@admin.register(WhatsAppAutomation)
+class WhatsAppAutomationAdmin(admin.ModelAdmin):
+    list_display = ('gym', 'get_type_display', 'enabled', 'days_before', 'last_run_at')
+    list_filter = ('enabled', 'type', 'gym')
+    search_fields = ('gym__name', 'template')
+
+@admin.register(WhatsAppMessageLog)
+class WhatsAppMessageLogAdmin(admin.ModelAdmin):
+    list_display = ('phone', 'member', 'gym', 'status', 'created_at')
+    list_filter = ('status', 'gym', 'created_at')
+    search_fields = ('phone', 'message', 'gym__name')
+    readonly_fields = ('created_at', 'updated_at')
+    date_hierarchy = 'created_at'

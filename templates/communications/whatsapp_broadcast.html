@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}WhatsApp Broadcast | {{ request.user.gym.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-white">Broadcast Message</h2>
+    <p class="text-slate-400 text-sm mt-1">Send manual messages to specific groups or individual members.</p>
+</div>
+
+<!-- Tabs -->
+<div class="border-b border-slate-800 mb-6">
+    <nav class="-mb-px flex space-x-8">
+        <a href="{% url 'frontend:whatsapp-dashboard' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-300 hover:border-slate-700">
+            Dashboard
+        </a>
+        <a href="{% url 'frontend:whatsapp-broadcast' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-brand-500 font-medium text-sm text-brand-400">
+            Broadcast
+        </a>
+        <a href="{% url 'frontend:whatsapp-templates' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-300 hover:border-slate-700">
+            Templates & Rules
+        </a>
+        <a href="{% url 'frontend:whatsapp-logs' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-300 hover:border-slate-700">
+            Message Logs
+        </a>
+    </nav>
+</div>
+
+<div class="max-w-3xl">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
+        <div class="px-6 py-4 border-b border-slate-800 bg-slate-800/30">
+            <h3 class="text-lg font-semibold text-white">Compose Broadcast</h3>
+        </div>
+        
+        <form method="post" action="{% url 'frontend:whatsapp-broadcast' %}" class="p-6">
+            {% csrf_token %}
+
+            <!-- Audience Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-slate-300 mb-2">Select Target Audience</label>
+                <select name="audience" id="audience_selector" class="shadow-sm focus:ring-brand-500 focus:border-brand-500 block w-full sm:text-sm bg-slate-800 border-slate-700 text-white rounded-md p-2.5 outline-none transition-colors" required>
+                    <option value="" disabled selected>-- Choose Audience --</option>
+                    <option value="active_members">All Active Members</option>
+                    <option value="expired_members">All Expired Members</option>
+                    <option value="goal_group">Selected Goal Group</option>
+                    <option value="specific_plan">Selected Membership Plan</option>
+                    <option value="leads_only">Leads Only</option>
+                    <option value="specific_member">Specific Member</option>
+                </select>
+            </div>
+
+            <!-- Dynamic Fields Container -->
+            <div id="dynamic_fields" class="mb-6 p-4 rounded-lg bg-slate-800/50 border border-slate-700 hidden">
+                
+                <!-- Displayed if Goal is selected -->
+                <div id="goal_field" class="hidden">
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Select Fitness Goal</label>
+                    <select name="goal" class="shadow-sm focus:ring-brand-500 focus:border-brand-500 block w-full sm:text-sm bg-slate-800 border-slate-700 text-white rounded-md p-2 outline-none">
+                        {% for value, label in goals %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Displayed if Plan is selected -->
+                <div id="plan_field" class="hidden">
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Select Membership Plan</label>
+                    <select name="plan_id" class="shadow-sm focus:ring-brand-500 focus:border-brand-500 block w-full sm:text-sm bg-slate-800 border-slate-700 text-white rounded-md p-2 outline-none">
+                        {% for plan in plans %}
+                            <option value="{{ plan.id }}">{{ plan.name }} (₹{{ plan.price }})</option>
+                        {% empty %}
+                            <option value="" disabled>No active plans found.</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Displayed if Specific Member is selected -->
+                <div id="member_field" class="hidden">
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Select Member</label>
+                    <select name="member_id" class="shadow-sm focus:ring-brand-500 focus:border-brand-500 block w-full sm:text-sm bg-slate-800 border-slate-700 text-white rounded-md p-2 outline-none">
+                        {% for mem in members %}
+                            <option value="{{ mem.id }}">{{ mem.name }} ({{ mem.phone }})</option>
+                        {% empty %}
+                            <option value="" disabled>No active members found.</option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-slate-500 mt-2">Note: For large gyms, a searchable dropdown is recommended here.</p>
+                </div>
+
+                <!-- Help text for static groups -->
+                <div id="static_group_help" class="hidden text-sm text-slate-400">
+                    <i class="fas fa-info-circle mr-1"></i> Messages will be sent to all users matching this criteria with a valid phone number.
+                </div>
+            </div>
+
+            <!-- Message Composer -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-slate-300 mb-2">Message</label>
+                <textarea name="message" rows="6" class="shadow-sm focus:ring-brand-500 focus:border-brand-500 block w-full sm:text-sm bg-slate-800 border-slate-700 text-white rounded-md p-3 font-mono text-sm leading-relaxed" placeholder="Type your message here..." required></textarea>
+                <p class="mt-2 text-xs text-slate-500">Available variables: <span class="text-brand-400 font-mono bg-brand-500/10 px-1 py-0.5 rounded">{% verbatim %}{{name}}{% endverbatim %}</span></p>
+                <p class="text-xs mt-1 text-amber-500/80"><i class="fas fa-exclamation-triangle mr-1"></i> <strong>Note:</strong> Messages sent outside the 24-hour service window may require approved WhatsApp templates according to Meta's policies. Freeform messages might fail if not conforming.</p>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-4 border-t border-slate-800">
+                <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-brand-600 hover:bg-brand-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 focus:ring-offset-slate-900 transition-colors gap-2">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                    Send Broadcast Message
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selector = document.getElementById('audience_selector');
+        const dynamicContainer = document.getElementById('dynamic_fields');
+        
+        const goalField = document.getElementById('goal_field');
+        const planField = document.getElementById('plan_field');
+        const memberField = document.getElementById('member_field');
+        const staticHelp = document.getElementById('static_group_help');
+
+        function hideAllDynamicFields() {
+            goalField.classList.add('hidden');
+            planField.classList.add('hidden');
+            memberField.classList.add('hidden');
+            staticHelp.classList.add('hidden');
+            
+            // disable inputs when hidden so they don't submit accidentally
+            goalField.querySelector('select').disabled = true;
+            planField.querySelector('select').disabled = true;
+            memberField.querySelector('select').disabled = true;
+        }
+
+        selector.addEventListener('change', function() {
+            hideAllDynamicFields();
+            dynamicContainer.classList.remove('hidden');
+
+            const val = this.value;
+            if (val === 'goal_group') {
+                goalField.classList.remove('hidden');
+                goalField.querySelector('select').disabled = false;
+            } else if (val === 'specific_plan') {
+                planField.classList.remove('hidden');
+                planField.querySelector('select').disabled = false;
+            } else if (val === 'specific_member') {
+                memberField.classList.remove('hidden');
+                memberField.querySelector('select').disabled = false;
+            } else if (['active_members', 'expired_members', 'leads_only'].includes(val)) {
+                staticHelp.classList.remove('hidden');
+            } else {
+                dynamicContainer.classList.add('hidden');
+            }
+        });
+    });
+</script>
+{% endblock %}

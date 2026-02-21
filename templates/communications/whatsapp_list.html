@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}WhatsApp Communications - {{ request.user.gym.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white">WhatsApp History</h1>
+            <p class="text-slate-400 text-sm mt-1">Track automated messages sent to members.</p>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50 flex items-center gap-4">
+                <div>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Messages Sent</p>
+                    <p class="text-xl font-bold text-emerald-400">{{ delivered_messages }}</p>
+                </div>
+                <!-- Divider -->
+                <div class="w-px h-8 bg-slate-700"></div>
+                <div>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Spend</p>
+                    <p class="text-xl font-bold text-amber-400">₹{{ total_spend|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message List -->
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-slate-800/50 text-slate-400 font-medium border-b border-slate-800">
+                    <tr>
+                        <th class="px-6 py-4">Status & Time</th>
+                        <th class="px-6 py-4">Member</th>
+                        <th class="px-6 py-4">Phone Number</th>
+                        <th class="px-6 py-4">Message Type</th>
+                        <th class="px-6 py-4">Template Name</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/50">
+                    {% for message in messages %}
+                    <tr class="hover:bg-slate-800/30 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                {% if message.status == 'sent' or message.status == 'delivered' or message.status == 'read' %}
+                                    <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                {% else %}
+                                    <div class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                                {% endif %}
+                                <div>
+                                    <p class="text-slate-300">{{ message.created_at|date:"M d, Y" }}</p>
+                                    <p class="text-xs text-slate-500">{{ message.created_at|time:"h:i A" }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if message.member %}
+                                <a href="{% url 'frontend:member-detail' message.member.id %}" class="font-medium text-white hover:text-indigo-400 flex items-center gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-indigo-400">
+                                        {{ message.member.name|first }}
+                                    </div>
+                                    {{ message.member.name }}
+                                </a>
+                            {% else %}
+                                <span class="text-slate-500 italic">Unknown Member</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-mono text-slate-300">{{ message.recipient_phone }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium 
+                                {% if message.message_type == 'welcome' %}bg-blue-500/10 text-blue-400
+                                {% elif message.message_type == 'renew_reminder' %}bg-amber-500/10 text-amber-400
+                                {% elif message.message_type == 'promo' %}bg-fuchsia-500/10 text-fuchsia-400
+                                {% else %}bg-slate-800 text-slate-300{% endif %}">
+                                {{ message.get_message_type_display|default:message.message_type|title }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-slate-400">{{ message.template_name }}</span>
+                            {% if message.cost_inr > 0 %}
+                                <span class="ml-2 text-[10px] text-slate-500">₹{{ message.cost_inr }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                            <div class="flex flex-col items-center gap-2">
+                                <svg class="w-8 h-8 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                </svg>
+                                <span>No WhatsApp messages sent yet.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="px-6 py-4 border-t border-slate-800 flex items-center justify-between">
+            <p class="text-sm text-slate-400">
+                Showing <span class="font-medium text-white">{{ page_obj.start_index }}</span> to <span class="font-medium text-white">{{ page_obj.end_index }}</span> of <span class="font-medium text-white">{{ paginator.count }}</span> messages
+            </p>
+            <div class="flex gap-2">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded-lg bg-slate-800 text-sm font-medium text-white hover:bg-slate-700 transition-colors">Prev</a>
+                {% else %}
+                    <button disabled class="px-3 py-1.5 rounded-lg bg-slate-800/50 text-sm font-medium text-slate-500 cursor-not-allowed">Prev</button>
+                {% endif %}
+                
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded-lg bg-slate-800 text-sm font-medium text-white hover:bg-slate-700 transition-colors">Next</a>
+                {% else %}
+                    <button disabled class="px-3 py-1.5 rounded-lg bg-slate-800/50 text-sm font-medium text-slate-500 cursor-not-allowed">Next</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

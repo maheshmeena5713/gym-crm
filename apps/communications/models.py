@@ -205,3 +205,119 @@ class ContactQuery(BaseModel):
 
     def __str__(self):
         return f"{self.name} - {self.subject}"
+
+
+class WhatsAppAutomation(BaseModel):
+    """
+    Automated WhatsApp messaging rules defined per Gym (Pro plan).
+    """
+    gym = models.ForeignKey(
+        'gyms.Gym',
+        on_delete=models.CASCADE,
+        related_name='whatsapp_automations',
+        verbose_name="Gym",
+    )
+    
+    class AutomationType(models.TextChoices):
+        EXPIRY_REMINDER = 'expiry_reminder', 'Membership Expiry Reminder'
+        PAYMENT_PENDING = 'payment_pending', 'Payment Pending'
+        INACTIVE_REMINDER = 'inactive_reminder', 'Inactive Member Reminder'
+        BIRTHDAY = 'birthday', 'Birthday Wish'
+        
+    type = models.CharField(
+        max_length=50,
+        choices=AutomationType.choices,
+        verbose_name="Automation Type"
+    )
+    enabled = models.BooleanField(
+        default=False,
+        verbose_name="Enabled"
+    )
+    days_before = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Days Before/After",
+        help_text="e.g., 3 days before expiry"
+    )
+    template = models.TextField(
+        verbose_name="Message Template",
+        help_text="Supports variables like {{name}}, {{expiry_date}}, {{plan_name}}, {{gym_name}}"
+    )
+    last_run_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Last Run At"
+    )
+
+    objects = models.Manager()
+    active_objects = ActiveManager()
+
+    class Meta:
+        db_table = 'communications_whatsappautomation'
+        verbose_name = 'WhatsApp Automation'
+        verbose_name_plural = 'WhatsApp Automations'
+        unique_together = ['gym', 'type']
+
+    def __str__(self):
+        return f"{self.gym.name} - {self.get_type_display()}"
+
+
+class WhatsAppMessageLog(BaseModel):
+    """
+    Detailed log of all automated and manual broadcast messages sent via WhatsApp.
+    This replaces/augments the base WhatsAppMessage for the automation flows.
+    """
+    gym = models.ForeignKey(
+        'gyms.Gym',
+        on_delete=models.CASCADE,
+        related_name='whatsapp_message_logs',
+        verbose_name="Gym",
+    )
+    member = models.ForeignKey(
+        'members.Member',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='whatsapp_message_logs',
+        verbose_name="Member",
+    )
+    phone = models.CharField(
+        max_length=20,
+        verbose_name="Phone Number",
+    )
+    message = models.TextField(
+        verbose_name="Message Content",
+    )
+    
+    class DeliveryStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        SENT = 'sent', 'Sent'
+        FAILED = 'failed', 'Failed'
+
+    status = models.CharField(
+        max_length=20,
+        choices=DeliveryStatus.choices,
+        default=DeliveryStatus.PENDING,
+        verbose_name="Status",
+    )
+    response = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="API Response",
+    )
+
+    objects = models.Manager()
+    active_objects = ActiveManager()
+
+    class Meta:
+        db_table = 'communications_whatsappmessagelog'
+        verbose_name = 'WhatsApp Message Log'
+        verbose_name_plural = 'WhatsApp Message Logs'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['gym', 'status']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        return f"Log to {self.phone} ({self.status})"

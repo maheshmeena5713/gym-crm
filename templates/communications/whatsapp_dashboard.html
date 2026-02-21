@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}WhatsApp Automation Dashboard | {{ request.user.gym.name }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h2 class="text-2xl font-bold text-white">WhatsApp Automation</h2>
+        <p class="text-slate-400 text-sm mt-1">Manage your automated messaging campaigns and view basic statistics.</p>
+    </div>
+    <a href="{% url 'frontend:whatsapp-templates' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-medium transition-colors">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+        </svg>
+        Manage Templates
+    </a>
+</div>
+
+<!-- Tabs -->
+<div class="border-b border-slate-800 mb-6">
+    <nav class="-mb-px flex space-x-8">
+        <a href="{% url 'frontend:whatsapp-dashboard' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-brand-500 font-medium text-sm text-brand-400">
+            Dashboard
+        </a>
+        <a href="{% url 'frontend:whatsapp-broadcast' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-300 hover:border-slate-700">
+            Broadcast
+        </a>
+        <a href="{% url 'frontend:whatsapp-templates' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-300 hover:border-slate-700">
+            Templates & Rules
+        </a>
+        <a href="{% url 'frontend:whatsapp-logs' %}" class="whitespace-nowrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-300 hover:border-slate-700">
+            Message Logs
+        </a>
+    </nav>
+</div>
+
+<!-- Stats Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-brand-500/30 transition-colors">
+        <div class="flex items-center justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center">
+                <svg class="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                </svg>
+            </div>
+        </div>
+        <p class="text-3xl font-bold text-white">{{ total_sent_today }}</p>
+        <p class="text-sm text-slate-400 mt-1">Messages Sent (Today)</p>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-rose-500/30 transition-colors">
+        <div class="flex items-center justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                <svg class="w-5 h-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
+            </div>
+        </div>
+        <p class="text-3xl font-bold text-white">{{ failed_count_today }}</p>
+        <p class="text-sm text-slate-400 mt-1">Failed Messages (Today)</p>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-emerald-500/30 transition-colors">
+        <div class="flex items-center justify-between mb-3">
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+        </div>
+        <p class="text-xl font-bold text-white mt-2">
+            {% if last_run_timestamp %}
+                {{ last_run_timestamp|date:"M d, Y H:i" }}
+            {% else %}
+                Never
+            {% endif %}
+        </p>
+        <p class="text-sm text-slate-400 mt-1">Last Automated Run</p>
+    </div>
+</div>
+
+<!-- Automations Status -->
+<div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-800">
+        <h3 class="text-lg font-semibold text-white">Active Automations Overview</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider">
+                <tr>
+                    <th class="px-6 py-4 text-left font-medium">Automation Type</th>
+                    <th class="px-6 py-4 text-left font-medium">Status</th>
+                    <th class="px-6 py-4 text-left font-medium">Target Logic</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+                {% for automation in automations %}
+                <tr class="hover:bg-slate-800/30 transition-colors">
+                    <td class="px-6 py-4 text-sm font-medium text-white">{{ automation.get_type_display }}</td>
+                    <td class="px-6 py-4 text-sm">
+                        {% if automation.enabled %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Enabled
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400 border border-slate-500/20">
+                                Disabled
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-300">
+                        {% if automation.days_before %}
+                            {{ automation.days_before }} days before/after
+                        {% else %}
+                            Triggered locally
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="px-6 py-8 text-center text-slate-500 text-sm">
+                        No automations found. Ensure templates are initialized.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
