@@ -140,10 +140,17 @@ class WhatsAppService:
             
         components = [
             {
+                "type": "header",
+                "parameters": [
+                    {"type": "text", "parameter_name": "gym_name", "text": member.gym.name}
+                ]
+            },
+            {
                 "type": "body",
                 "parameters": [
-                    {"type": "text", "text": member.name},
-                    {"type": "text", "text": member.gym.name},
+                    {"type": "text", "parameter_name": "member_name", "text": member.name},
+                    {"type": "text", "parameter_name": "gym_name", "text": member.gym.name},
+                    {"type": "text", "parameter_name": "gym_team", "text": f"{member.gym.name} Team"},
                 ]
             }
         ]
@@ -151,6 +158,7 @@ class WhatsAppService:
         return self.send_template_message(
             recipient_phone=member.phone,
             template_name="gym_welcome_message", 
+            language_code="en_IN",
             components=components,
             gym=member.gym,
             member=member,
@@ -164,15 +172,17 @@ class WhatsAppService:
         if not member.phone or not member.gym:
             return None
         
-        days_left = (member.membership_expiry - timezone.now().date()).days
+        days_left = (member.membership_expiry - timezone.now().date()).days if member.membership_expiry else 0
         
         components = [
             {
                 "type": "body",
                 "parameters": [
-                    {"type": "text", "text": member.name},
-                    {"type": "text", "text": str(days_left)},
-                    {"type": "text", "text": "https://pay.gym.in/renew"}, # Placeholder link
+                    {"type": "text", "parameter_name": "member_name", "text": member.name},
+                    {"type": "text", "parameter_name": "gym_name", "text": member.gym.name},
+                    {"type": "text", "parameter_name": "no_of_days", "text": str(days_left)},
+                    {"type": "text", "parameter_name": "payment_link", "text": "https://pay.gym.in/renew"}, # Placeholder link
+                    {"type": "text", "parameter_name": "gym_team", "text": f"{member.gym.name} Team"},
                 ]
             }
         ]
@@ -180,6 +190,7 @@ class WhatsAppService:
         return self.send_template_message(
             recipient_phone=member.phone,
             template_name="gym_renewal_reminder",
+            language_code="en",
             components=components,
             gym=member.gym,
             member=member,
@@ -197,8 +208,10 @@ class WhatsAppService:
             {
                 "type": "body",
                 "parameters": [
-                    {"type": "text", "text": member.name},
-                    {"type": "text", "text": quote.content},
+                    {"type": "text", "parameter_name": "member_name", "text": member.name},
+                    {"type": "text", "parameter_name": "gym_name", "text": member.gym.name},
+                    {"type": "text", "parameter_name": "quote", "text": quote.content},
+                    {"type": "text", "parameter_name": "gym_team", "text": f"{member.gym.name} Team"},
                 ]
             }
         ]
@@ -206,6 +219,7 @@ class WhatsAppService:
         return self.send_template_message(
             recipient_phone=member.phone,
             template_name="gym_daily_motivation",
+            language_code="en",
             components=components,
             gym=member.gym,
             member=member,
