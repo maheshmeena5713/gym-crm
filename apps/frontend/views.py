@@ -19,7 +19,7 @@ from django.views import View
 from django.views.generic import ListView
 from apps.communications.models import WhatsAppMessage
 
-from apps.gyms.models import Gym
+from apps.gyms.models import Gym, GymRegistrationRequest
 from apps.enterprises.models import HoldingCompany, Brand, Organization
 from apps.members.models import Member, MembershipPlan
 from apps.billing.models import SubscriptionPlan
@@ -351,6 +351,12 @@ class SignupView(View):
         return render(request, 'auth/signup.html', context)
 
 
+class SignupSuccessView(View):
+    """Show success page after signup to inform about the manual approval process."""
+    def get(self, request):
+        return render(request, 'auth/registration_success.html')
+
+
 class SignupSendOTPView(View):
     """Validate gym details from Step 1 + phone from Step 2, send OTP."""
     def post(self, request):
@@ -437,56 +443,35 @@ class SignupVerifyOTPView(View):
         if not success:
             return JsonResponse({'success': False, 'error': result}, status=400)
 
-        # Get the selected plan, fallback to starter if missing
-        plan_slug = signup_data.get('plan_slug')
-        plan = SubscriptionPlan.objects.filter(slug=plan_slug).first()
-        if not plan:
-            plan = SubscriptionPlan.objects.filter(slug='starter').first()
+        from django.contrib.auth.hashers import make_password
 
-        # Create the Gym
-        gym = Gym.objects.create(
-            name=signup_data['gym_name'],
+        # Create GymRegistrationRequest
+        raw_password = signup_data.get('password', '')
+        hashed_password = make_password(raw_password) if raw_password else ''
+
+        GymRegistrationRequest.objects.create(
+            gym_name=signup_data['gym_name'],
             owner_name=signup_data['owner_name'],
-            owner_phone=phone,
             email=signup_data['email'],
+            phone=phone,
             city=signup_data.get('city', ''),
-            subscription_plan=plan,
-            subscription_status='trial',
-            trial_ends_at=timezone.now() + timedelta(days=30),
-            is_active=True,
+            plan_slug=signup_data.get('plan_slug', ''),
+            username=signup_data.get('username', ''),
+            password_hash=hashed_password,
+            status=GymRegistrationRequest.StatusChoices.PENDING,
         )
 
-        # The OTPService.verify_otp already created a GymUser — update it
+        # delete the dummy User created by OTP verify if it's orphaned
         user = result['user']
-        user.name = signup_data['owner_name']
-        user.gym = gym
-        user.role = 'owner'
-        user.email = signup_data['email']
-        user.username = signup_data.get('username')
-        if signup_data.get('password'):
-            user.set_password(signup_data['password'])
-        user.can_view_revenue = True
-        user.can_manage_members = True
-        user.can_manage_leads = True
-        user.can_use_ai = True
-        user.save()
-
-        # Auto-login
-        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        if not user.gym:
+            user.delete()
 
         # Clean up session
         request.session.pop('signup_data', None)
 
-        # Return gym info for localStorage
-        import json
         return JsonResponse({
             'success': True,
-            'redirect': '/dashboard/',
-            'gym_cache': {
-                'gym_code': gym.gym_code,
-                'gym_name': gym.name,
-                'gym_logo': '',
-            },
+            'redirect': '/signup/success/',
         })
 
 

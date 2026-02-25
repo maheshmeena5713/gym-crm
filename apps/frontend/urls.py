@@ -25,6 +25,7 @@ urlpatterns = [
     path('signup/', views.SignupView.as_view(), name='signup'),
     path('signup/send-otp/', views.SignupSendOTPView.as_view(), name='signup-send-otp'),
     path('signup/verify-otp/', views.SignupVerifyOTPView.as_view(), name='signup-verify-otp'),
+    path('signup/success/', views.SignupSuccessView.as_view(), name='signup-success'),
     path('signup/check-username/', views.CheckUsernameView.as_view(), name='check-username'),
 
     # ── Password Login ────────────────────────────────────

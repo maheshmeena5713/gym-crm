@@ -108,3 +108,14 @@ class WhatsAppMessageLogAdmin(admin.ModelAdmin):
     search_fields = ('phone', 'message', 'gym__name')
     readonly_fields = ('created_at', 'updated_at')
     date_hierarchy = 'created_at'
+
+
+from apps.communications.models import EmailMessageLog
+
+@admin.register(EmailMessageLog)
+class EmailMessageLogAdmin(admin.ModelAdmin):
+    list_display = ('email', 'member', 'gym', 'subject', 'status', 'created_at')
+    list_filter = ('status', 'gym', 'created_at')
+    search_fields = ('email', 'subject', 'message', 'gym__name')
+    readonly_fields = ('created_at', 'updated_at')
+    date_hierarchy = 'created_at'

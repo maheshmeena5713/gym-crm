@@ -272,6 +272,49 @@ class Gym(BaseModel):
         # Auto-detect image format from base64 header
         if self.logo_base64.startswith('data:'):
             return self.logo_base64
-        # Default to PNG if raw base64
         return f"data:image/png;base64,{self.logo_base64}"
+
+
+class GymRegistrationRequest(BaseModel):
+    """
+    Model to store signup requests that require admin approval
+    before creating an active Gym tenant and User account.
+    """
+    class StatusChoices(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+
+    # Request data
+    gym_name = models.CharField(max_length=255, verbose_name="Gym Name")
+    owner_name = models.CharField(max_length=255, verbose_name="Owner Name")
+    email = models.EmailField(verbose_name="Contact Email")
+    phone = models.CharField(max_length=20, verbose_name="Contact Phone")
+    city = models.CharField(max_length=100, blank=True, default='', verbose_name="City")
+    plan_slug = models.CharField(max_length=50, blank=True, null=True, verbose_name="Plan Slug")
+    
+    # User Account Info
+    username = models.CharField(max_length=150, verbose_name="Requested Username")
+    # Store raw password temporarily until approval ? Wait, password is set dynamically.
+    # It is safer not to store raw password or store hashed, but GymUser.set_password is required.
+    # What's better here? We can store it hashed using make_password and copy it to GymUser
+    password_hash = models.CharField(max_length=128, verbose_name="Password Hash")
+    
+    # State
+    status = models.CharField(
+        max_length=20,
+        choices=StatusChoices.choices,
+        default=StatusChoices.PENDING,
+        verbose_name="Request Status"
+    )
+    
+    class Meta:
+        db_table = 'gyms_registration_request'
+        verbose_name = 'Gym Registration Request'
+        verbose_name_plural = 'Gym Registration Requests'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.gym_name} ({self.status})"
+
 

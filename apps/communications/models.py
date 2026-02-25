@@ -321,3 +321,71 @@ class WhatsAppMessageLog(BaseModel):
 
     def __str__(self):
         return f"Log to {self.phone} ({self.status})"
+
+
+class EmailMessageLog(BaseModel):
+    """
+    Detailed log of all emails sent out for tracking and auditing purposes.
+    Similar to WhatsAppMessageLog but for emails (welcome, approval, generic notifications).
+    """
+    gym = models.ForeignKey(
+        'gyms.Gym',
+        on_delete=models.CASCADE,
+        related_name='email_message_logs',
+        verbose_name="Gym",
+        null=True,
+        blank=True,
+    )
+    member = models.ForeignKey(
+        'members.Member',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='email_message_logs',
+        verbose_name="Member",
+    )
+    email = models.CharField(
+        max_length=254,
+        verbose_name="Email Address",
+    )
+    subject = models.CharField(
+        max_length=300,
+        verbose_name="Subject",
+    )
+    message = models.TextField(
+        verbose_name="Message Content",
+    )
+    
+    class DeliveryStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        SENT = 'sent', 'Sent'
+        FAILED = 'failed', 'Failed'
+
+    status = models.CharField(
+        max_length=20,
+        choices=DeliveryStatus.choices,
+        default=DeliveryStatus.PENDING,
+        verbose_name="Status",
+    )
+    response = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="API/SMTP Response",
+    )
+
+    objects = models.Manager()
+    active_objects = ActiveManager()
+
+    class Meta:
+        db_table = 'communications_emailmessagelog'
+        verbose_name = 'Email Message Log'
+        verbose_name_plural = 'Email Message Logs'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['gym', 'status']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        return f"Email to {self.email} ({self.status})"
+
