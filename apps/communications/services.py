@@ -235,7 +235,7 @@ class WhatsAppService:
         formatted_phone = self._format_phone(phone)
         
         # We need the WhatsAppMessageLog model
-        from apps.communications.models import WhatsAppMessageLog
+        from apps.activity_logs.models import WhatsAppMessageLog
 
         payload = {
             "messaging_product": "whatsapp",

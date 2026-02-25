@@ -19,28 +19,25 @@ class WorkoutPlanViewSet(viewsets.ModelViewSet):
         return WorkoutPlan.objects.none()
 
     def create(self, request, *args, **kwargs):
-        member_id = request.data.get('member')
         goal = request.data.get('goal')
         level = request.data.get('level')
+        custom_requirements = request.data.get('custom_requirements', '')
 
-        if not all([member_id, goal, level]):
+        if not all([goal, level]):
             return Response(
-                {"error": "Missing required fields: member, goal, level"}, 
+                {"error": "Missing required fields: goal, level"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Validate Member belongs to user's gym
-        from apps.members.models import Member
-        try:
-            member = Member.objects.get(id=member_id, gym=request.user.gym)
-        except Member.DoesNotExist:
-            return Response(
-                {"error": "Member not found or access denied."}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
-
         # Call Service
-        plan, error = WorkoutPlanService.generate_workout_plan(member, goal, level, user=request.user)
+        plan, error = WorkoutPlanService.generate_workout_plan(
+            gym=request.user.gym, 
+            goal=goal, 
+            level=level, 
+            member=None, 
+            custom_requirements=custom_requirements,
+            user=request.user
+        )
         
         if error:
             return Response({"error": error}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -65,27 +62,26 @@ class DietPlanViewSet(viewsets.ModelViewSet):
         return DietPlan.objects.none()
 
     def create(self, request, *args, **kwargs):
-        member_id = request.data.get('member')
         calories = request.data.get('calories')
         preference = request.data.get('preference')
         budget = request.data.get('budget', 'medium')
+        custom_requirements = request.data.get('custom_requirements', '')
 
-        if not all([member_id, calories, preference]):
+        if not all([calories, preference]):
             return Response(
-                {"error": "Missing required fields: member, calories, preference"}, 
+                {"error": "Missing required fields: calories, preference"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        from apps.members.models import Member
-        try:
-            member = Member.objects.get(id=member_id, gym=request.user.gym)
-        except Member.DoesNotExist:
-            return Response(
-                {"error": "Member not found."}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        plan, error = DietPlanService.generate_diet_plan(member, calories, preference, budget, user=request.user)
+        plan, error = DietPlanService.generate_diet_plan(
+            gym=request.user.gym, 
+            calories=calories, 
+            preference=preference, 
+            budget=budget, 
+            member=None, 
+            custom_requirements=custom_requirements,
+            user=request.user
+        )
         
         if error:
             return Response({"error": error}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

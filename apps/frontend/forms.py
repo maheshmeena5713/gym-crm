@@ -49,17 +49,21 @@ class MemberForm(forms.ModelForm):
         membership_plan = cleaned_data.get('membership_plan')
         membership_start = cleaned_data.get('membership_start')
         
+        from django.utils import timezone
+        
+        # Fallback to instance start if available and empty in POST
+        if not membership_start:
+             if self.instance and getattr(self.instance, 'membership_start', None):
+                  membership_start = self.instance.membership_start
+             else:
+                  membership_start = timezone.now().date()
+             cleaned_data['membership_start'] = membership_start
+        
         # Auto-calculate expiry if missing but plan is selected
         if not membership_expiry and membership_plan:
-            from django.utils import timezone
-            if not membership_start:
-                membership_start = timezone.now().date()
-                cleaned_data['membership_start'] = membership_start
-            
-            # Calculate based on months
-            days = membership_plan.duration_months * 30 
-            cleaned_data['membership_expiry'] = membership_start + timezone.timedelta(days=days)
-            membership_expiry = cleaned_data['membership_expiry']
+             days = membership_plan.duration_months * 30 
+             cleaned_data['membership_expiry'] = membership_start + timezone.timedelta(days=days)
+             membership_expiry = cleaned_data['membership_expiry']
 
         # If still missing, it's an error because model requires it
         if not membership_expiry:

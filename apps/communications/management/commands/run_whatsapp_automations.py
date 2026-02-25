@@ -6,7 +6,8 @@ from datetime import timedelta
 
 from apps.gyms.models import Gym
 from apps.members.models import Member
-from apps.communications.models import WhatsAppAutomation, WhatsAppMessageLog
+from apps.communications.models import WhatsAppAutomation
+from apps.activity_logs.models import WhatsAppMessageLog
 from apps.communications.services import WhatsAppService
 
 logger = logging.getLogger(__name__)

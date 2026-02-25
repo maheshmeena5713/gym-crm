@@ -3,14 +3,14 @@ import logging
 from django.conf import settings
 from django.utils import timezone
 from apps.fitness.models import WorkoutPlan
-from apps.ai_engine.models import AIUsageLog
+from apps.activity_logs.models import AIUsageLog
 import requests 
 
 logger = logging.getLogger('apps.ai_engine.services')
 
 class WorkoutPlanService:
     @staticmethod
-    def generate_workout_plan(member, goal, level, user=None):
+    def generate_workout_plan(gym, goal, level, member=None, custom_requirements=None, user=None):
         """
         Generates a workout plan using AI (Gemini or OpenAI).
         """
@@ -34,18 +34,18 @@ class WorkoutPlanService:
         # Assuming level matches values in WorkoutPlan.Difficulty or is passed as string
         
         usage_log = AIUsageLog(
-            gym=member.gym,
-            user=member.assigned_trainer if member.assigned_trainer else None, 
+            gym=gym,
+            user=user, 
             feature=AIUsageLog.Feature.WORKOUT_PLAN,
         )
 
         try:
             if provider == 'gemini':
                 model_used = 'gemini-2.0-flash'
-                success, plan_data = WorkoutPlanService._generate_with_gemini(member, goal, level)
+                success, plan_data = WorkoutPlanService._generate_with_gemini(goal, level, member, custom_requirements)
             else:
                 model_used = 'gpt-4o-mini'
-                success, plan_data = WorkoutPlanService._generate_with_openai(member, goal, level)
+                success, plan_data = WorkoutPlanService._generate_with_openai(goal, level, member, custom_requirements)
 
             if not success:
                 error_message = str(plan_data)
@@ -65,12 +65,13 @@ class WorkoutPlanService:
 
             # Create WorkoutPlan (using apps.fitness.models.WorkoutPlan)
             plan = WorkoutPlan.objects.create(
-                gym=member.gym,
+                gym=gym,
                 member=member,
                 created_by=user,
                 goal=goal,
-                difficulty=level, # Mapping 'level' to 'difficulty'
-                plan_data=plan_data, # Mapping 'plan_json' to 'plan_data'
+                difficulty=level,
+                custom_requirements=custom_requirements,
+                plan_data=plan_data,
                 ai_model_used=model_used,
                 title=f"{goal.replace('_', ' ').title()} Plan",
                 duration_weeks=4 
@@ -85,15 +86,21 @@ class WorkoutPlanService:
             return None, str(e)
 
     @staticmethod
-    def _construct_prompt(member, goal, level):
-        return f"""
-        Create a 4-week structured workout plan for a {member.get_gender_display()} gym member.
+    def _construct_prompt(goal, level, member=None, custom_requirements=None):
+        profile_str = ""
+        if member:
+            profile_str = f"""
         Profile:
         - Age: {timezone.now().year - member.date_of_birth.year if member.date_of_birth else 'Unknown'}
         - Weight: {member.weight_kg}kg, Height: {member.height_cm}cm
+        - Medical Conditions: {member.medical_conditions or 'None'}"""
+            
+        reqs_str = f"\n        - Custom Requirements: {custom_requirements}" if custom_requirements else ""
+
+        return f"""
+        Create a 4-week structured workout plan.{profile_str}
         - Goal: {goal}
-        - Experience Level: {level}
-        - Medical Conditions: {member.medical_conditions or 'None'}
+        - Experience Level: {level}{reqs_str}
         - Days per week: 4-5
 
         Return purely JSON in this structure:
@@ -119,9 +126,9 @@ class WorkoutPlanService:
         """
 
     @staticmethod
-    def _generate_with_openai(member, goal, level):
+    def _generate_with_openai(goal, level, member=None, custom_requirements=None):
         try:
-            prompt = WorkoutPlanService._construct_prompt(member, goal, level)
+            prompt = WorkoutPlanService._construct_prompt(goal, level, member, custom_requirements)
             
             headers = {
                 "Content-Type": "application/json",
@@ -150,13 +157,13 @@ class WorkoutPlanService:
             return False, str(e)
 
     @staticmethod
-    def _generate_with_gemini(member, goal, level):
+    def _generate_with_gemini(goal, level, member=None, custom_requirements=None):
         try:
             from google import genai
             from google.genai import types
             
             client = genai.Client(api_key=settings.GEMINI_API_KEY)
-            prompt = WorkoutPlanService._construct_prompt(member, goal, level)
+            prompt = WorkoutPlanService._construct_prompt(goal, level, member, custom_requirements)
             
             response = client.models.generate_content(
                 model='gemini-2.0-flash',

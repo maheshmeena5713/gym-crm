@@ -93,7 +93,8 @@ class ContactQueryAdmin(admin.ModelAdmin):
         self.message_user(request, f'{updated} queries marked as closed.')
     mark_as_closed.short_description = "Mark as closed"
 
-from apps.communications.models import WhatsAppAutomation, WhatsAppMessageLog
+from apps.communications.models import WhatsAppAutomation
+from apps.activity_logs.models import WhatsAppMessageLog
 
 @admin.register(WhatsAppAutomation)
 class WhatsAppAutomationAdmin(admin.ModelAdmin):
@@ -110,7 +111,7 @@ class WhatsAppMessageLogAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
 
 
-from apps.communications.models import EmailMessageLog
+from apps.activity_logs.models import EmailMessageLog
 
 @admin.register(EmailMessageLog)
 class EmailMessageLogAdmin(admin.ModelAdmin):

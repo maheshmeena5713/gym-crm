@@ -6,7 +6,7 @@ from django.contrib import admin
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
-from apps.ai_engine.models import AIUsageLog
+from apps.activity_logs.models import AIUsageLog
 
 
 class AIUsageLogResource(resources.ModelResource):

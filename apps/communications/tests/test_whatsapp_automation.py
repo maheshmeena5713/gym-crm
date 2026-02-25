@@ -7,7 +7,8 @@ from django.core.management import call_command
 from apps.gyms.models import Gym
 from apps.billing.models import SubscriptionPlan
 from apps.members.models import Member, MembershipPlan
-from apps.communications.models import WhatsAppAutomation, WhatsAppMessageLog
+from apps.communications.models import WhatsAppAutomation
+from apps.activity_logs.models import WhatsAppMessageLog
 from apps.communications.services import WhatsAppService
 from unittest.mock import patch, MagicMock
 

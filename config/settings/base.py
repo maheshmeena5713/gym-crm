@@ -51,6 +51,7 @@ LOCAL_APPS = [
     'apps.ai_engine.apps.AiEngineConfig',
     'apps.communications.apps.CommunicationsConfig',
     'apps.frontend.apps.FrontendConfig',
+    'apps.activity_logs.apps.ActivityLogsConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

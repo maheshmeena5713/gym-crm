@@ -15,7 +15,7 @@ from apps.gyms.models import Gym, GymRegistrationRequest
 from apps.users.models import GymUser
 from apps.billing.models import SubscriptionPlan
 from apps.communications.services import WhatsAppService
-from apps.communications.models import EmailMessageLog
+from apps.activity_logs.models import EmailMessageLog
 
 
 class GymResource(resources.ModelResource):

@@ -37,7 +37,6 @@
             <table class="w-full text-sm text-left text-slate-400">
                 <thead class="text-xs text-slate-400 uppercase bg-slate-900/50 border-b border-slate-800">
                     <tr>
-                        <th class="px-6 py-4">Member</th>
                         <th class="px-6 py-4">Title</th>
                         <th class="px-6 py-4">Calories</th>
                         <th class="px-6 py-4">Preference</th>
@@ -48,7 +47,6 @@
                 <tbody>
                     {% for plan in plans %}
                     <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
-                        <td class="px-6 py-4 font-medium text-white">{{ plan.member.name }}</td>
                         <td class="px-6 py-4">{{ plan.title }}</td>
                         <td class="px-6 py-4 text-emerald-400 font-medium">{{ plan.daily_calories }} kcal</td>
                         <td class="px-6 py-4">
@@ -61,12 +59,13 @@
                         </td>
                         <td class="px-6 py-4">{{ plan.created_at|date:"M d, Y" }}</td>
                         <td class="px-6 py-4 text-right">
-                            <a href="{% url 'ai_engine:diet-detail' plan.pk %}" class="text-indigo-400 hover:text-indigo-300 font-medium hover:underline">View Plan</a>
+                            <a href="{% url 'ai_engine:diet-detail' plan.pk %}" class="text-indigo-400 hover:text-indigo-300 font-medium hover:underline mr-4">View Plan</a>
+                            <button onclick="openShareModal('{{ plan.id }}', 'diet')" class="text-emerald-400 hover:text-emerald-300 font-medium hover:underline">Share</button>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                        <td colspan="5" class="px-6 py-12 text-center text-slate-500">
                             <p class="mb-2">No diet plans generated yet.</p>
                             <a href="{% url 'ai_engine:diet-create' %}" class="text-indigo-500 hover:text-indigo-400">Generate your first diet plan &rarr;</a>
                         </td>
@@ -89,4 +88,99 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Share Modal -->
+<div id="shareModal" class="fixed inset-0 bg-slate-900/80 z-50 hidden flex justify-center items-center">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-md w-full shadow-2xl">
+        <h3 class="text-xl font-bold text-white mb-4">Share Personalized Plan</h3>
+        <p class="text-slate-400 text-sm mb-4">Select a member to generate a personalized view link.</p>
+        
+        <form id="shareForm" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" id="sharePlanId" value="">
+            <input type="hidden" id="sharePlanType" value="">
+            <div>
+                <label class="block text-sm text-slate-300 mb-2">Member</label>
+                <select id="shareMemberId" class="bg-slate-800 border border-slate-700 text-white rounded-lg block w-full p-2.5" required>
+                    <option value="">-- Choose Member --</option>
+                    {% for member in active_members %}
+                    <option value="{{ member.id }}">{{ member.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div id="shareResult" class="hidden mt-4">
+                <label class="block text-sm text-slate-300 mb-2">Shareable Link</label>
+                <div class="flex gap-2">
+                    <input type="text" id="shareLinkInput" readonly class="bg-slate-950 border border-slate-700 text-slate-400 rounded-lg block w-full p-2.5 text-sm" onclick="this.select()">
+                    <button type="button" onclick="copyShareLink()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">Copy</button>
+                </div>
+                <p class="text-emerald-400 text-xs mt-2 hidden" id="copySuccessMsg">Link copied to clipboard!</p>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="document.getElementById('shareModal').classList.add('hidden')" class="px-4 py-2 text-slate-400 hover:text-white transition-colors border border-transparent hover:border-slate-700 rounded-lg">Close</button>
+                <button type="submit" id="shareSubmitBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">Generate Link</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openShareModal(planId, planType) {
+        document.getElementById('sharePlanId').value = planId;
+        document.getElementById('sharePlanType').value = planType;
+        document.getElementById('shareModal').classList.remove('hidden');
+        document.getElementById('shareResult').classList.add('hidden');
+        document.getElementById('shareSubmitBtn').classList.remove('hidden');
+        document.getElementById('shareLinkInput').value = '';
+    }
+
+    document.getElementById('shareForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const memberId = document.getElementById('shareMemberId').value;
+        const planId = document.getElementById('sharePlanId').value;
+        const planType = document.getElementById('sharePlanType').value;
+        const btn = document.getElementById('shareSubmitBtn');
+        
+        btn.innerHTML = 'Generating...';
+        btn.disabled = true;
+
+        try {
+            const formData = new URLSearchParams();
+            formData.append('member_id', memberId);
+
+            const response = await fetch(`/dashboard/ai/${planType}/${planId}/share/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                document.getElementById('shareLinkInput').value = data.url;
+                document.getElementById('shareResult').classList.remove('hidden');
+                btn.classList.add('hidden');
+            } else {
+                alert(data.error || 'Failed to generate link');
+            }
+        } catch (err) {
+            alert('An error occurred while generating the link.');
+        } finally {
+            btn.innerHTML = 'Generate Link';
+            btn.disabled = false;
+        }
+    });
+
+    function copyShareLink() {
+        const copyText = document.getElementById('shareLinkInput');
+        copyText.select();
+        document.execCommand('copy');
+        document.getElementById('copySuccessMsg').classList.remove('hidden');
+        setTimeout(() => { document.getElementById('copySuccessMsg').classList.add('hidden'); }, 2000);
+    }
+</script>
 {% endblock %}

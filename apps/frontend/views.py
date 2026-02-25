@@ -1309,7 +1309,8 @@ class WhatsAppDashboardView(WhatsAppBaseView, View):
     """
     def get(self, request):
         gym = request.user.gym
-        from apps.communications.models import WhatsAppAutomation, WhatsAppMessageLog
+        from apps.communications.models import WhatsAppAutomation
+        from apps.activity_logs.models import WhatsAppMessageLog
         from django.db.models import Sum
         from django.utils import timezone
 
@@ -1394,7 +1395,7 @@ class WhatsAppLogsView(WhatsAppBaseView, ListView):
     
     def get_queryset(self):
         gym = self.request.user.gym
-        from apps.communications.models import WhatsAppMessageLog
+        from apps.activity_logs.models import WhatsAppMessageLog
         return WhatsAppMessageLog.objects.filter(gym=gym).select_related('member').order_by('-created_at')
 
 class WhatsAppBroadcastView(WhatsAppBaseView, View):

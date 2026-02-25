@@ -48,18 +48,6 @@
 
         <form method="POST" class="space-y-5" x-data="{ loading: false }" @submit="loading = true">
             {% csrf_token %}
-            
-            <!-- Member Select -->
-            <div>
-                <label for="member" class="block mb-2 text-sm font-medium text-slate-300">Select Member</label>
-                <select name="member" id="member" required class="bg-slate-950 border border-slate-700 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
-                    <option value="">-- Choose Member --</option>
-                    {% for member in members %}
-                    <option value="{{ member.id }}">{{ member.name }} ({{ member.phone }})</option>
-                    {% endfor %}
-                </select>
-                <p class="mt-1 text-xs text-slate-500">Only active members are shown.</p>
-            </div>
 
             <!-- Calorie Target -->
             <div>
@@ -88,6 +76,12 @@
                     <option value="medium" selected>Medium (Standard)</option>
                     <option value="high">High (Premium ingredients)</option>
                 </select>
+            </div>
+
+            <!-- Custom Requirements -->
+            <div>
+                <label for="custom_requirements" class="block mb-2 text-sm font-medium text-slate-300">Custom Requirements (Optional)</label>
+                <textarea name="custom_requirements" id="custom_requirements" rows="2" class="bg-slate-950 border border-slate-700 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5" placeholder="E.g., Lactose intolerant, no tofu..."></textarea>
             </div>
 
             <!-- Submit Button -->

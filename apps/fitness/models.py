@@ -23,6 +23,8 @@ class WorkoutPlan(BaseModel):
     member = models.ForeignKey(
         'members.Member',
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name='workout_plans',
         verbose_name="Member",
     )
@@ -43,6 +45,12 @@ class WorkoutPlan(BaseModel):
     )
     goal = models.CharField(max_length=50, verbose_name="Goal")
     duration_weeks = models.IntegerField(default=4, verbose_name="Duration (Weeks)")
+    custom_requirements = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Custom Requirements",
+        help_text="Optional specific requirements (e.g., 'no squats', 'knee pain').",
+    )
 
     class Difficulty(models.TextChoices):
         BEGINNER = 'beginner', 'Beginner'
@@ -83,7 +91,8 @@ class WorkoutPlan(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.title} - {self.member.name}"
+        member_name = getattr(self.member, 'name', 'Template')
+        return f"{self.title} - {member_name}"
 
 
 class DietPlan(BaseModel):
@@ -101,6 +110,8 @@ class DietPlan(BaseModel):
     member = models.ForeignKey(
         'members.Member',
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name='diet_plans',
         verbose_name="Member",
     )
@@ -121,6 +132,13 @@ class DietPlan(BaseModel):
     daily_protein_g = models.IntegerField(null=True, blank=True, verbose_name="Daily Protein (g)")
     daily_carbs_g = models.IntegerField(null=True, blank=True, verbose_name="Daily Carbs (g)")
     daily_fat_g = models.IntegerField(null=True, blank=True, verbose_name="Daily Fat (g)")
+
+    custom_requirements = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Custom Requirements",
+        help_text="Optional specific requirements (e.g., 'Jain food', 'no dairy').",
+    )
 
     # ── AI-Generated Content ──────────────────────────────────
     plan_data = models.JSONField(
@@ -149,7 +167,8 @@ class DietPlan(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.title} - {self.member.name}"
+        member_name = getattr(self.member, 'name', 'Template')
+        return f"{self.title} - {member_name}"
 
 
 class Attendance(BaseModel):
@@ -201,80 +220,3 @@ class Attendance(BaseModel):
         return f"{self.member.name} - {self.check_in.strftime('%Y-%m-%d %H:%M')}"
 
 
-class ProgressLog(BaseModel):
-    """
-    Body measurement history.
-    Visual progress charts = member retention.
-    """
-
-    gym = models.ForeignKey(
-        'gyms.Gym',
-        on_delete=models.CASCADE,
-        related_name='progress_logs',
-        verbose_name="Gym",
-    )
-    member = models.ForeignKey(
-        'members.Member',
-        on_delete=models.CASCADE,
-        related_name='progress_logs',
-        verbose_name="Member",
-    )
-    recorded_by = models.ForeignKey(
-        'users.GymUser',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='recorded_progress',
-        verbose_name="Recorded By",
-    )
-
-    # ── Metrics ───────────────────────────────────────────────
-    date = models.DateField(verbose_name="Date")
-    weight_kg = models.FloatField(null=True, blank=True, verbose_name="Weight (kg)")
-    body_fat_pct = models.FloatField(null=True, blank=True, verbose_name="Body Fat %")
-    muscle_mass_kg = models.FloatField(null=True, blank=True, verbose_name="Muscle Mass (kg)")
-    bmi = models.FloatField(null=True, blank=True, verbose_name="BMI")
-
-    # ── Measurements (cm) ────────────────────────────────────
-    chest_cm = models.FloatField(null=True, blank=True, verbose_name="Chest (cm)")
-    waist_cm = models.FloatField(null=True, blank=True, verbose_name="Waist (cm)")
-    hips_cm = models.FloatField(null=True, blank=True, verbose_name="Hips (cm)")
-    biceps_cm = models.FloatField(null=True, blank=True, verbose_name="Biceps (cm)")
-    thighs_cm = models.FloatField(null=True, blank=True, verbose_name="Thighs (cm)")
-
-    # ── Progress Photos ───────────────────────────────────────
-    front_photo = models.ImageField(
-        upload_to='progress_photos/',
-        null=True,
-        blank=True,
-        verbose_name="Front Photo",
-    )
-    side_photo = models.ImageField(
-        upload_to='progress_photos/',
-        null=True,
-        blank=True,
-        verbose_name="Side Photo",
-    )
-    back_photo = models.ImageField(
-        upload_to='progress_photos/',
-        null=True,
-        blank=True,
-        verbose_name="Back Photo",
-    )
-    notes = models.TextField(null=True, blank=True, verbose_name="Notes")
-
-    objects = models.Manager()
-    active_objects = ActiveManager()
-
-    class Meta:
-        db_table = 'fitness_progresslog'
-        verbose_name = 'Progress Log'
-        verbose_name_plural = 'Progress Logs'
-        ordering = ['-date']
-        unique_together = ['member', 'date']
-        indexes = [
-            models.Index(fields=['gym', 'member', 'date'], name='idx_prog_gym_member_date'),
-        ]
-
-    def __str__(self):
-        return f"{self.member.name} - {self.date}"

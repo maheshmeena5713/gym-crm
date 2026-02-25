@@ -26,4 +26,8 @@ urlpatterns += [
     path('dashboard/ai/diet/', views.DietPlanListView.as_view(), name='diet-list'),
     path('dashboard/ai/diet/create/', views.DietPlanCreateView.as_view(), name='diet-create'),
     path('dashboard/ai/diet/<uuid:pk>/', views.DietPlanDetailView.as_view(), name='diet-detail'),
+    
+    # Sharing
+    path('dashboard/ai/<str:plan_type>/<uuid:pk>/share/', views.SharedPlanGenerateView.as_view(), name='share-plan-generate'),
+    path('public/plan/shared/<str:token>/', views.SharedPlanPublicView.as_view(), name='shared-plan'),
 ]

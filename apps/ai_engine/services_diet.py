@@ -3,14 +3,14 @@ import logging
 from django.conf import settings
 from django.utils import timezone
 from apps.fitness.models import DietPlan
-from apps.ai_engine.models import AIUsageLog
+from apps.activity_logs.models import AIUsageLog
 import requests 
 
 logger = logging.getLogger('apps.ai_engine.services')
 
 class DietPlanService:
     @staticmethod
-    def generate_diet_plan(member, calories, preference, budget, user=None):
+    def generate_diet_plan(gym, calories, preference, budget, member=None, custom_requirements=None, user=None):
         """
         Generates an Indian Diet Plan using AI.
         """
@@ -31,7 +31,7 @@ class DietPlanService:
         model_used = ""
         
         usage_log = AIUsageLog(
-            gym=member.gym,
+            gym=gym,
             user=user, 
             feature=AIUsageLog.Feature.DIET_PLAN,
         )
@@ -39,10 +39,10 @@ class DietPlanService:
         try:
             if provider == 'gemini':
                 model_used = 'gemini-2.0-flash'
-                success, plan_data = DietPlanService._generate_with_gemini(member, calories, preference, budget)
+                success, plan_data = DietPlanService._generate_with_gemini(calories, preference, budget, member, custom_requirements)
             else:
                 model_used = 'gpt-4o-mini'
-                success, plan_data = DietPlanService._generate_with_openai(member, calories, preference, budget)
+                success, plan_data = DietPlanService._generate_with_openai(calories, preference, budget, member, custom_requirements)
 
             if not success:
                 error_message = str(plan_data)
@@ -66,14 +66,16 @@ class DietPlanService:
                 plan_data['meta'] = {}
             plan_data['meta']['budget'] = budget
 
+            goal = member.goal if member else "General Health"
             plan = DietPlan.objects.create(
-                gym=member.gym,
+                gym=gym,
                 member=member,
                 created_by=user,
                 title=f"{preference.title()} Indian Diet ({calories} kcal)",
-                goal=member.goal, # Inherit goal from member or input? Using member's goal for now
+                goal=goal,
                 dietary_preference=preference,
                 daily_calories=calories,
+                custom_requirements=custom_requirements,
                 plan_data=plan_data,
                 ai_model_used=model_used,
             )
@@ -87,16 +89,22 @@ class DietPlanService:
             return None, str(e)
 
     @staticmethod
-    def _construct_prompt(member, calories, preference, budget):
-        return f"""
-        Create a detailed weekly Indian Diet Plan for a gym member.
+    def _construct_prompt(calories, preference, budget, member=None, custom_requirements=None):
+        profile_str = ""
+        if member:
+            profile_str = f"""
         Profile:
         - Weight: {member.weight_kg}kg
         - Goal: {member.get_goal_display()}
+        - Medical: {member.medical_conditions or 'None'}"""
+            
+        reqs_str = f"\n        - Custom Requirements: {custom_requirements}" if custom_requirements else ""
+
+        return f"""
+        Create a detailed weekly Indian Diet Plan.{profile_str}
         - Calorie Target: {calories} kcal/day
         - Preference: {preference} (Strictly Indian Cuisine)
-        - Budget: {budget} (Low=Home simplified, High=Premium ingredients)
-        - Medical: {member.medical_conditions or 'None'}
+        - Budget: {budget} (Low=Home simplified, High=Premium ingredients){reqs_str}
 
         Requirements:
         1. Foods must be common Indian items (Roti, Dal, Sabzi, Rice, Poha, Idli, Paneer, Chicken Curry etc).
@@ -136,9 +144,9 @@ class DietPlanService:
         """
 
     @staticmethod
-    def _generate_with_openai(member, calories, preference, budget):
+    def _generate_with_openai(calories, preference, budget, member=None, custom_requirements=None):
         try:
-            prompt = DietPlanService._construct_prompt(member, calories, preference, budget)
+            prompt = DietPlanService._construct_prompt(calories, preference, budget, member, custom_requirements)
             
             headers = {
                 "Content-Type": "application/json",
@@ -165,13 +173,13 @@ class DietPlanService:
             return False, str(e)
 
     @staticmethod
-    def _generate_with_gemini(member, calories, preference, budget):
+    def _generate_with_gemini(calories, preference, budget, member=None, custom_requirements=None):
         try:
             from google import genai
             from google.genai import types
             
             client = genai.Client(api_key=settings.GEMINI_API_KEY)
-            prompt = DietPlanService._construct_prompt(member, calories, preference, budget)
+            prompt = DietPlanService._construct_prompt(calories, preference, budget, member, custom_requirements)
             
             response = client.models.generate_content(
                 model='gemini-2.0-flash',

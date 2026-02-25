@@ -6,7 +6,8 @@ from django.contrib import admin
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
-from apps.fitness.models import WorkoutPlan, DietPlan, Attendance, ProgressLog
+from apps.fitness.models import WorkoutPlan, DietPlan, Attendance
+from apps.activity_logs.models import ProgressLog
 
 
 # ── WorkoutPlan ───────────────────────────────────────────────
